@@ -1,7 +1,7 @@
 // 🔴 إعدادات الاتصال بـ SUPABASE
 // استبدل القيم أدناه بالقيم الخاصة بمشروعك من موقع Supabase
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_PUBLIC_KEY'; // المفتاح الطويل الذي يبدأ بـ eyJ
+const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Xfac2hs9ZyQdfIzyDMcpTA_bh7c8GuE'; // المفتاح الطويل الذي يبدأ بـ eyJ
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
