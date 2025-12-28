@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التعدين</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -21,11 +20,9 @@
 </head>
 <body>
 
-    <div id="error-log" class="debug-box" style="border-color: green; color: green;">
-        ✅ النظام جاهز لاستقبال الكود...
+    <div id="error-log" class="debug-box" style="border-color: yellow; color: yellow;">
+        جاري تنظيف الرابط والاتصال... 🧹
     </div>
-
-    <div id="loading_msg" style="color: yellow; font-size: 18px;">جاري تشغيل المحركات... 🚀</div>
 
     <div id="main-app" class="dashboard-box">
         <h1 style="color: #ffd700;">⛏️ المنجم</h1>
@@ -51,74 +48,67 @@
             box.style.color = "red";
             box.innerHTML = `⚠️ تنبيه هام:<br>${msg}`;
         }
-        
-        // التقاط أي خطأ في الكود التالي
-        window.onerror = function(msg, url, line) {
-            logError(`حدث خطأ في السطر رقم (${line}):<br>${msg}`);
-            return false;
-        };
-    </script>
 
-    <script>
-        // مفاتيح قصيرة جداً لتجنب مشاكل النسخ
-        const P1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        const P2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
-        const P3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        // --- البيانات الحساسة ---
+        // ملاحظة: وضعت الرابط والمفتاح كما هما، والكود في الأسفل سينظفهما
+        let rawURL = "https://oezehdkfucwhttsrocsv.supabase.co";
         
-        const URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-        const KEY = P1 + P2 + P3; // دمج المفاتيح
+        let P1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+        let P2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+        let P3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        
+        // --- التنظيف الآلي (إزالة أي مسافات مخفية) ---
+        const URL = rawURL.replace(/\s/g, '').trim(); 
+        const KEY = (P1 + P2 + P3).replace(/\s/g, '').trim();
 
-        // دالة البدء
-        function start() {
+        async function start() {
             if (!window.supabase) {
-                logError("المكتبة غير موجودة! جاري المحاولة مرة أخرى...");
-                setTimeout(start, 1000); // حاول مجدداً بعد ثانية
+                logError("المكتبة غير موجودة! (ضعف إنترنت). جار إعادة المحاولة...");
+                setTimeout(() => window.location.reload(), 2000);
                 return;
             }
 
             try {
+                // محاولة الاتصال بالبيانات النظيفة
                 const sb = window.supabase.createClient(URL, KEY);
                 
-                // فحص الجلسة
-                sb.auth.getSession().then(({ data }) => {
-                    if (!data.session) {
-                        window.location.href = "index.html"; // طرد
-                        return;
-                    }
-                    
-                    const user = data.session.user;
-                    document.getElementById('user-email').innerText = user.email;
-                    
-                    // جلب الرصيد
-                    sb.from('profiles').select('*').eq('id', user.id).single().then(({ data: profile }) => {
-                        if(profile) {
-                            document.getElementById('balance').innerText = profile.balance.toFixed(4);
-                        } else {
-                            // إنشاء رصيد جديد
-                            sb.from('profiles').insert([{ id: user.id, username: user.email.split('@')[0] }]).then(() => {
-                                document.getElementById('balance').innerText = "0.0000";
-                            });
-                        }
-                        
-                        // فتح الموقع
-                        document.getElementById('error-log').style.display = 'none'; // إخفاء سجل الأخطاء
-                        document.getElementById('loading_msg').style.display = 'none';
-                        document.getElementById('main-app').style.display = 'block';
-                        
-                        // تشغيل العداد
-                        setInterval(() => {
-                            let el = document.getElementById('pending');
-                            el.innerText = (parseFloat(el.innerText) + 0.00001).toFixed(5);
-                        }, 1000);
-                    });
-                });
+                const { data } = await sb.auth.getSession();
+                
+                if (!data.session) {
+                    window.location.href = "index.html"; // غير مسجل؟ ارجع للدخول
+                    return;
+                }
+                
+                const user = data.session.user;
+                document.getElementById('user-email').innerText = user.email;
+                
+                // جلب الرصيد
+                const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                
+                if(profile) {
+                    document.getElementById('balance').innerText = profile.balance.toFixed(4);
+                } else {
+                    // مستخدم جديد؟ ننشئ له رصيداً
+                    await sb.from('profiles').insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
+                    document.getElementById('balance').innerText = "0.0000";
+                }
+                
+                // 🟢 نجاح! إخفاء رسائل الخطأ وإظهار المنجم
+                document.getElementById('error-log').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                
+                // تشغيل العداد
+                setInterval(() => {
+                    let el = document.getElementById('pending');
+                    el.innerText = (parseFloat(el.innerText) + 0.00001).toFixed(5);
+                }, 1000);
 
             } catch (err) {
-                logError(err.message);
+                logError("خطأ فني: " + err.message);
             }
         }
 
-        // تشغيل النظام
+        // تشغيل
         start();
 
         async function logout() {
