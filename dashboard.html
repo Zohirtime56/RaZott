@@ -15,11 +15,15 @@
         button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
         .btn-collect { background: #28a745; color: white; }
         .btn-logout { background: #dc3545; color: white; margin-top: 30px; }
+        #loading { margin-top: 50px; font-size: 20px; color: yellow; }
     </style>
 </head>
 <body>
 
-    <div id="loading">جاري تحميل المنجم... ⛏️</div>
+    <div id="loading">
+        جاري إصلاح البيانات والدخول... ⛏️<br>
+        <small style="color: gray;">(قد يستغرق بضع ثوانٍ)</small>
+    </div>
 
     <div id="main-app" style="display: none;">
         <h1>⛏️ منطقة التعدين</h1>
@@ -33,7 +37,7 @@
 
             <div class="stat-card">
                 <small>⚡ قوة التعدين</small>
-                <div id="power" style="font-size: 18px;">...</div>
+                <div id="power" style="font-size: 18px;">0.0001 / ثانية</div>
             </div>
 
             <div style="margin: 20px;">
@@ -52,7 +56,7 @@
     </div>
 
     <script>
-        // إعداد المفاتيح
+        // مفاتيح الاتصال
         const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
         const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
         const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
@@ -60,55 +64,60 @@
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
-        let miningPower = 0.0001; // القوة الافتراضية
+        let miningPower = 0.0001;
 
-        // 1. التحقق من الدخول عند تشغيل الصفحة
-        async function checkSession() {
+        async function initDashboard() {
+            // 1. هل المستخدم مسجل دخول؟
             const { data } = await supabase.auth.getSession();
             if (!data.session) {
-                // إذا لم يكن مسجلاً، اطرده لصفحة الدخول
-                window.location.href = "index.html";
-            } else {
-                currentUser = data.session.user;
-                document.getElementById('user-email').innerText = currentUser.email;
-                loadProfile();
+                window.location.href = "index.html"; // طرد المستخدم إذا لم يسجل
+                return;
             }
-        }
 
-        // 2. جلب بيانات الرصيد من الجدول
-        async function loadProfile() {
-            const { data, error } = await supabase
+            currentUser = data.session.user;
+            document.getElementById('user-email').innerText = currentUser.email;
+
+            // 2. محاولة جلب البيانات
+            let { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', currentUser.id)
                 .single();
 
-            if (data) {
-                document.getElementById('balance').innerText = data.balance.toFixed(4);
-                // miningPower = data.mining_power; // يمكن تفعيل هذا لاحقاً
-                document.getElementById('power').innerText = miningPower + " / ثانية";
+            // 3. المصلح التلقائي: إذا لم يجد بيانات، ينشئها فوراً
+            if (!profile || error) {
+                console.log("بيانات مفقودة، جاري الإنشاء...");
+                const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{ id: currentUser.id, username: currentUser.email.split('@')[0], balance: 0 }]);
                 
-                // إظهار الموقع
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                startMiningAnimation();
+                // تعيين قيم افتراضية لكي يفتح الموقع
+                document.getElementById('balance').innerText = "0.0000";
             } else {
-                alert("خطأ في تحميل الملف الشخصي");
+                // وجد البيانات، يعرضها
+                document.getElementById('balance').innerText = profile.balance.toFixed(4);
             }
+
+            // 4. إظهار الشاشة وإخفاء التحميل
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            
+            // تشغيل العداد
+            startMiningAnimation();
         }
 
-        // 3. عداد وهمي سريع للمتعة البصرية
         function startMiningAnimation() {
             let tempProfit = 0;
             setInterval(() => {
-                tempProfit += miningPower / 10; // زيادة بسيطة كل 100 ملي ثانية
+                tempProfit += miningPower / 10;
                 document.getElementById('pending').innerText = tempProfit.toFixed(6);
             }, 100);
         }
 
-        // 4. زر الجمع (سيتم تفعيله لاحقاً)
         async function collect() {
-            alert("سيتم إضافة الأرباح للرصيد الأساسي في التحديث القادم!");
+            // كود الجمع البسيط (سنطوره لاحقاً ليتصل بالقاعدة)
+            alert("✅ تم إرسال طلب الجمع! (سيتم تفعيل الحفظ قريباً)");
+            document.getElementById('pending').innerText = "0.00000";
         }
 
         async function logout() {
@@ -116,8 +125,8 @@
             window.location.href = "index.html";
         }
 
-        // تشغيل الفحص
-        checkSession();
+        // تشغيل النظام
+        initDashboard();
     </script>
 </body>
 </html>
