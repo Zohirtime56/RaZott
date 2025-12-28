@@ -10,18 +10,70 @@
 <body>
     <div class="container">
         <h2>🚀 حساب جديد</h2>
-        <p>ابدأ رحلة التعدين مجاناً</p>
         <input type="email" id="email" placeholder="البريد الإلكتروني">
         <input type="password" id="password" placeholder="كلمة المرور">
         <button onclick="registerUser()">إنشاء الحساب</button>
         
-        <p class="alert" id="msg"></p>
+        <p class="alert" id="msg" style="color: yellow;"></p>
         
         <div style="margin-top: 15px;">
             <a href="index.html">لديك حساب بالفعل؟ سجل دخول</a>
         </div>
     </div>
 
-    <script src="auth.js"></script>
+    <script>
+        // --- الكود مدمج هنا لضمان العمل ---
+        
+        // مفاتيحك الصحيحة
+        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function registerUser() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('msg');
+
+            if (!email || !password) {
+                msg.innerText = "⚠️ يرجى تعبئة جميع الحقول";
+                return;
+            }
+
+            msg.innerText = "⏳ جاري الاتصال...";
+
+            try {
+                // 1. إنشاء المستخدم
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    msg.innerText = "❌ خطأ: " + error.message;
+                    alert("خطأ: " + error.message);
+                } else {
+                    // 2. حفظ البيانات في الجدول
+                    if (data.user) {
+                        const { error: dbError } = await supabase.from('profiles').insert([
+                            { id: data.user.id, username: email.split('@')[0] }
+                        ]);
+                        
+                        if (dbError) {
+                            msg.innerText = "⚠️ تم التسجيل لكن فشل حفظ البيانات (تأكد من RLS)";
+                            alert("مشكلة في قاعدة البيانات: " + dbError.message);
+                        } else {
+                            msg.innerText = "✅ تم بنجاح!";
+                            alert("تم إنشاء الحساب بنجاح! سيتم نقلك لتسجيل الدخول.");
+                            window.location.href = "index.html";
+                        }
+                    }
+                }
+            } catch (err) {
+                msg.innerText = "❌ خطأ غير متوقع: " + err.message;
+                alert(err.message);
+            }
+        }
+    </script>
 </body>
-</html>
+    </html>
