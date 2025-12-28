@@ -7,11 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        body { background-color: #000; color: white; font-family: monospace; text-align: center; padding: 20px; }
+        body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .debug-box {
-            background: #111; border: 1px dashed red; color: #ff4444; 
+            background: #111; border: 1px dashed cyan; color: cyan; 
             padding: 15px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 50px; font-weight: bold;
-            word-break: break-all;
         }
         .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
         .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
@@ -21,59 +20,63 @@
 </head>
 <body>
 
-    <div id="error-log" class="debug-box" style="border-color: yellow; color: yellow;">
-        جاري تعقيم الرابط... 🧼
+    <div id="status-log" class="debug-box">
+        جاري فك تشفير الرابط والاتصال... 🔓
     </div>
 
     <div id="main-app" class="dashboard-box">
         <h1 style="color: #ffd700;">⛏️ المنجم</h1>
         <p>المستخدم: <span id="user-email" style="color: cyan;"></span></p>
+
         <div class="stat-card">
             <small>💰 الرصيد</small>
             <div id="balance" class="balance-text">---</div>
         </div>
+
         <div class="stat-card">
             <small>أرباح جاري تعدينها</small>
             <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
+
         <button onclick="logout()" style="background: #dc3545; color: white;">خروج</button>
     </div>
 
     <script>
-        function log(msg, color="yellow") {
-            const box = document.getElementById('error-log');
+        function log(msg, color="cyan") {
+            const box = document.getElementById('status-log');
             box.style.color = color;
             box.style.borderColor = color;
             box.innerHTML = msg;
         }
 
-        // --- البيانات الخام ---
-        // لا تغير أي شيء هنا
-        const rawUrl = "https://oezehdkfucwhttsrocsv.supabase.co";
-        const rawKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
-
-        // --- الفلتر النووي (Clean Function) ---
-        // هذا الكود يحذف أي حرف "غير مرئي" أو مسافة أو رمز غريب
-        function cleanString(str) {
-            return str.replace(/[^a-zA-Z0-9:./_-]/g, "");
-        }
-
-        const URL = cleanString(rawUrl);
-        const KEY = cleanString(rawKey);
+        // --- 1. البيانات المشفرة (لا تلمسها) ---
+        // هذا هو رابطك مشفراً لكي لا يدمره الهاتف
+        const ENCODED_URL = "aHR0cHM6Ly9vZXplaGRrZnVjd2h0dHNyb2Nzdi5zdXBhYmFzZS5jbw==";
+        
+        // مفتاحك مقسم (كما هو)
+        const K1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+        const K2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+        const K3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
 
         async function start() {
-            // عرض الرابط النهائي للتأكد
-            log(`Checking URL: ${URL}<br>Length: ${URL.length}`, "cyan");
-
-            if (!window.supabase) {
-                log("⚠️ المكتبة تتحمل... انتظر", "orange");
-                setTimeout(() => window.location.reload(), 2000);
-                return;
-            }
-
             try {
-                // محاولة الاتصال
-                const sb = window.supabase.createClient(URL, KEY);
+                // --- 2. فك التشفير والتنظيف ---
+                // atob: دالة تقوم بتحويل الكود المشفر إلى رابط حقيقي
+                const REAL_URL = atob(ENCODED_URL).trim(); 
+                
+                // تنظيف المفتاح من المسافات
+                const REAL_KEY = (K1 + K2 + K3).replace(/\s/g, '').trim();
+
+                log(`تم فك التشفير بنجاح!<br>جاري الاتصال بـ Supabase...`, "lime");
+
+                if (!window.supabase) {
+                    log("⚠️ جاري تحميل المكتبة... (انتظر)", "orange");
+                    setTimeout(() => window.location.reload(), 2000);
+                    return;
+                }
+
+                // --- 3. الاتصال ---
+                const sb = window.supabase.createClient(REAL_URL, REAL_KEY);
                 
                 const { data, error } = await sb.auth.getSession();
                 
@@ -86,34 +89,39 @@
                 const user = data.session.user;
                 document.getElementById('user-email').innerText = user.email;
                 
-                // جلب الرصيد
+                // --- 4. جلب أو إنشاء الرصيد ---
                 const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
                 
                 if(profile) {
                     document.getElementById('balance').innerText = profile.balance.toFixed(4);
                 } else {
+                    // إذا لم يجد رصيد، ينشئه فوراً
                     await sb.from('profiles').insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
                     document.getElementById('balance').innerText = "0.0000";
                 }
                 
-                // نجاح!
-                document.getElementById('error-log').style.display = 'none';
+                // ✅ نجاح كامل
+                document.getElementById('status-log').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 
+                // تشغيل العداد
                 setInterval(() => {
                     let el = document.getElementById('pending');
                     el.innerText = (parseFloat(el.innerText) + 0.00001).toFixed(5);
                 }, 1000);
 
             } catch (err) {
-                log(`🔥 خطأ قاتل:<br>${err.message}<br>URL Used: ${URL}`, "red");
+                log(`🔥 خطأ: ${err.message}`, "red");
             }
         }
 
         start();
 
         async function logout() {
-            const sb = window.supabase.createClient(URL, KEY);
+            // تسجيل خروج آمن
+            const url = atob(ENCODED_URL).trim();
+            const key = (K1 + K2 + K3).replace(/\s/g, '').trim();
+            const sb = window.supabase.createClient(url, key);
             await sb.auth.signOut();
             window.location.href = "index.html";
         }
