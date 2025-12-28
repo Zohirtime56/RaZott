@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التعدين (تشخيص)</title>
+    <title>لوحة التعدين</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .debug-box {
-            background: #111; border: 1px dashed #ffd700; color: #0f0; 
-            padding: 10px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 100px; font-size: 12px;
+            background: #111; border: 1px dashed yellow; color: #0f0; 
+            padding: 10px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 80px; font-size: 12px;
         }
         .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
         .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
-        h1 { color: #ffd700; }
         .balance-text { font-size: 30px; color: #0f0; font-family: monospace; }
-        .pending-text { font-size: 24px; color: #ffd700; font-family: monospace; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
-        .btn-collect { background: #28a745; color: white; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h5 style="color: yellow;">سجل النظام (Logs):</h5>
-    <div id="logs" class="debug-box">Initializing...<br></div>
+    <h5 style="color: gray;">حالة النظام:</h5>
+    <div id="logs" class="debug-box">Waiting for page load...</div>
 
-    <div id="loading_msg">جاري تحميل البيانات... ⏳</div>
+    <div id="loading_msg" style="color: yellow; font-size: 18px;">جاري تجهيز المنجم... ⏳</div>
 
     <div id="main-app" class="dashboard-box">
-        <h1>⛏️ المنجم</h1>
-        <p>مستخدم: <span id="user-email" style="color: cyan;"></span></p>
+        <h1 style="color: #ffd700;">⛏️ المنجم</h1>
+        <p>مرحباً: <span id="user-email" style="color: cyan;"></span></p>
 
         <div class="stat-card">
             <small>💰 الرصيد</small>
@@ -38,99 +35,109 @@
 
         <div class="stat-card">
             <small>أرباح جاري تعدينها</small>
-            <div id="pending" class="pending-text">0.00000</div>
+            <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
 
-        <button onclick="collect()" class="btn-collect">جمع الأرباح</button>
-        <button onclick="logout()" style="background: red; color: white; margin-top: 20px;">خروج</button>
+        <button onclick="logout()" style="background: #dc3545; color: white;">تسجيل خروج</button>
     </div>
 
     <script>
+        // دالة التسجيل في الشاشة السوداء
         function log(msg) {
             const box = document.getElementById('logs');
             box.innerHTML += `> ${msg}<br>`;
         }
 
-        // كشف الأخطاء العامة
+        // التقاط أي خطأ برمجي فوراً
         window.onerror = function(msg, url, line) {
-            log(`🔥 CRASH: ${msg} (Line: ${line})`);
-            return false;
+            log(`❌ CRASH ERROR: ${msg}`);
+            alert("حدث خطأ: " + msg);
         };
 
+        // مفاتيحك
         const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
         const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
         const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
         const SUPABASE_KEY = PART_1 + PART_2;
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let miningPower = 0.0001;
+        let supabase = null;
 
-        async function init() {
-            log("1. Checking session...");
-            const { data } = await supabase.auth.getSession();
-            
-            if (!data.session) {
-                log("❌ No session found. Redirecting...");
-                setTimeout(() => window.location.href = "index.html", 2000);
-                return;
-            }
+        // هذه الدالة تعمل فقط عندما تنتهي الصفحة من التحميل تماماً
+        window.onload = async function() {
+            log("1. Page Loaded. Checking library...");
 
-            const user = data.session.user;
-            document.getElementById('user-email').innerText = user.email;
-            log(`✅ User found: ${user.email}`);
-
-            log("2. Fetching profile from DB...");
-            
-            // محاولة جلب البيانات
-            let { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (error) {
-                log(`⚠️ Fetch Error: ${error.message}`);
-                log("3. Attempting to CREATE profile...");
-                
-                // محاولة إنشاء البروفايل إذا كان مفقوداً
-                const { error: insertError } = await supabase
-                    .from('profiles')
-                    .insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
-                
-                if (insertError) {
-                    log(`❌ Insert Failed: ${insertError.message}`);
-                    log("💡 TIP: Check RLS policies in Supabase!");
-                } else {
-                    log("✅ Profile created successfully!");
-                    document.getElementById('balance').innerText = "0.0000";
-                    showApp();
-                }
+            if (window.supabase) {
+                log("✅ Library found. Connecting...");
+                startApp();
             } else {
-                log("✅ Profile loaded!");
-                document.getElementById('balance').innerText = profile.balance.toFixed(4);
-                showApp();
+                log("⚠️ Library missing! Retrying in 1 second...");
+                setTimeout(() => {
+                    if(window.supabase) startApp();
+                    else {
+                        log("❌ FAILED: Check Internet connection.");
+                        alert("الإنترنت ضعيف، المكتبة لم تتحمل.");
+                    }
+                }, 1000);
             }
-        }
+        };
 
-        function showApp() {
-            document.getElementById('loading_msg').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            
-            // تشغيل العداد
-            setInterval(() => {
-                let current = parseFloat(document.getElementById('pending').innerText);
-                document.getElementById('pending').innerText = (current + miningPower).toFixed(5);
-            }, 1000);
+        async function startApp() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                log("2. Checking Session...");
+                const { data } = await supabase.auth.getSession();
+
+                if (!data.session) {
+                    log("⛔ No user found. Go to login.");
+                    setTimeout(() => window.location.href = "index.html", 1500);
+                    return;
+                }
+
+                const user = data.session.user;
+                document.getElementById('user-email').innerText = user.email;
+                log(`✅ User: ${user.email}`);
+
+                log("3. Getting Profile...");
+                
+                // جلب البيانات
+                let { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error || !profile) {
+                    log("⚠️ Profile missing. Creating new one...");
+                    // إنشاء بروفايل جديد
+                    await supabase.from('profiles').insert([
+                        { id: user.id, username: user.email.split('@')[0], balance: 0 }
+                    ]);
+                    document.getElementById('balance').innerText = "0.0000";
+                } else {
+                    document.getElementById('balance').innerText = profile.balance.toFixed(4);
+                }
+
+                // فتح التطبيق
+                log("🎉 DONE! Opening Dashboard.");
+                document.getElementById('loading_msg').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+
+                // تشغيل العداد
+                setInterval(() => {
+                    let current = parseFloat(document.getElementById('pending').innerText);
+                    document.getElementById('pending').innerText = (current + 0.00001).toFixed(5);
+                }, 1000);
+
+            } catch (err) {
+                log(`🔥 ERROR in startApp: ${err.message}`);
+            }
         }
 
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = "index.html";
         }
-        
-        async function collect() { alert("تم الجمع (تجريبي)"); }
-
-        init();
     </script>
 </body>
 </html>
