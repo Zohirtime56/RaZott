@@ -1,6 +1,6 @@
 // تأكد من وضع مفاتيحك هنا
 const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_Xfac2hs9ZyQdfIzyDMcpTA_bh7c8GuE'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo'; 
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
