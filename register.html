@@ -8,47 +8,22 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        /* إجبار الخلفية لتكون سوداء تماماً */
-        body { background-color: #000000 !important; color: white !important; text-align: center; padding-top: 40px; }
-        
-        /* تصميم الصندوق */
+        body { background-color: #000000 !important; color: white !important; text-align: center; padding-top: 40px; font-family: 'Segoe UI', sans-serif; }
         .login-box {
-            background-color: #1a1a1a;
-            border: 2px solid #ffd700; /* حدود ذهبية واضحة */
-            padding: 20px;
-            border-radius: 15px;
-            max-width: 90%;
-            margin: 0 auto;
+            background-color: #1a1a1a; border: 2px solid #ffd700; padding: 20px;
+            border-radius: 15px; max-width: 90%; margin: 0 auto;
         }
-
-        /* تصميم حقول الإدخال لتكون واضحة جداً */
         input {
-            background-color: #333 !important; 
-            color: #fff !important; 
-            border: 1px solid #777 !important;
-            padding: 15px !important;
-            font-size: 16px !important;
-            margin-bottom: 15px;
-            border-radius: 8px;
+            background-color: #333 !important; color: #fff !important; border: 1px solid #777 !important;
+            padding: 15px !important; margin-bottom: 15px; border-radius: 8px; width: 100%;
         }
-
-        /* تصميم الزر ليكون ذهبياً وواضحاً */
         .btn-gold {
-            background-color: #ffd700 !important;
-            color: #000000 !important;
-            font-weight: bold;
-            font-size: 18px;
-            padding: 12px;
-            border: none;
-            width: 100%;
-            border-radius: 8px;
-            cursor: pointer;
+            background-color: #ffd700 !important; color: #000000 !important; font-weight: bold;
+            font-size: 18px; padding: 12px; border: none; width: 100%; border-radius: 8px; cursor: pointer;
         }
-
-        /* تأثير عند الضغط */
         .btn-gold:active { transform: scale(0.98); background-color: #e6c200 !important; }
-        
-        a { color: #ffd700; text-decoration: none; font-size: 14px; }
+        a { color: #ffd700; text-decoration: none; }
+        #status { color: yellow; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -57,75 +32,85 @@
         <h2 style="color: #ffd700; margin-bottom: 20px;">🚀 إنشاء حساب</h2>
         
         <div class="login-box">
-            <input type="email" id="email" class="form-control" placeholder="✉️ البريد الإلكتروني">
-            <input type="password" id="password" class="form-control" placeholder="🔑 كلمة المرور">
+            <input type="email" id="email" placeholder="✉️ البريد الإلكتروني">
+            <input type="password" id="password" placeholder="🔑 كلمة المرور">
             
-            <button id="regBtn" onclick="register()" class="btn-gold">تسجيل الحساب الآن</button>
+            <button id="regBtn" onclick="safeRegister()" class="btn-gold">تسجيل الحساب الآن</button>
             
-            <p id="status" style="margin-top: 15px; color: yellow; font-weight: bold; min-height: 20px;"></p>
-            
+            <p id="status"></p>
             <hr style="border-color: #555;">
             <a href="index.html">لدي حساب بالفعل؟ تسجيل الدخول</a>
         </div>
     </div>
 
     <script>
-        // مفاتيحك الصحيحة
+        // كود الطوارئ: لاكتشاف أي خطأ في التحميل فوراً
+        window.onerror = function(msg, url, line) {
+            alert("⚠️ حدث خطأ فني: " + msg);
+            document.getElementById('status').innerText = "خطأ في النظام: " + msg;
+            return true;
+        };
+
         const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function register() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        let supabase;
+
+        // محاولة تهيئة النظام بأمان
+        try {
+            if (window.supabase) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } else {
+                document.getElementById('status').innerText = "❌ جاري تحميل المكتبة... انتظر قليلاً";
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        async function safeRegister() {
+            // فحص 1: هل الزر يستجيب؟
             const status = document.getElementById('status');
-            const btn = document.getElementById('regBtn');
+            status.innerText = "جاري المعالجة... ⏳";
 
-            // 1. التحقق من البيانات
-            if(!email || !password) {
-                alert("⚠️ الرجاء كتابة الإيميل وكلمة السر!");
+            // فحص 2: هل المكتبة محملة؟
+            if (!window.supabase || !supabase) {
+                alert("❌ خطأ: النت ضعيف، مكتبة النظام لم تتحمل بعد. قم بتحديث الصفحة.");
+                status.innerText = "مشكلة في تحميل النظام (Supabase missing)";
                 return;
             }
 
-            // 2. تغيير شكل الزر ليعرف المستخدم أن العملية جارية
-            btn.innerText = "جاري الاتصال... ⏳";
-            btn.style.opacity = "0.7";
-            status.innerText = "جاري محاولة التسجيل...";
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if(!email || !password) {
+                alert("⚠️ اكتب الإيميل وكلمة السر!");
+                status.innerText = "البيانات ناقصة";
+                return;
+            }
 
             try {
-                // 3. محاولة التسجيل
+                // محاولة التسجيل
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password
                 });
 
                 if (error) {
-                    // إذا حدث خطأ (مثل الإيميل موجود مسبقاً)
-                    alert("❌ خطأ: " + error.message);
-                    status.innerText = "حدث خطأ: " + error.message;
-                    btn.innerText = "حاول مرة أخرى";
-                    btn.style.opacity = "1";
+                    alert("❌ فشل التسجيل: " + error.message);
+                    status.innerText = "خطأ: " + error.message;
                 } else {
-                    // 4. إذا نجح التسجيل، ننشئ البروفايل
-                    if(data.user) {
-                        const { error: dbError } = await supabase.from('profiles').insert([
+                    if (data.user) {
+                        // محاولة إنشاء البروفايل
+                        await supabase.from('profiles').insert([
                             { id: data.user.id, username: email.split('@')[0] }
                         ]);
-
-                        if(dbError) {
-                            console.error(dbError); // لا توقف العملية إذا فشل البروفايل فقط
-                        }
-
-                        status.innerText = "✅ تم بنجاح!";
-                        alert("🎉 مبروك! تم إنشاء الحساب. سيتم توجيهك لتسجيل الدخول.");
+                        alert("🎉 تم التسجيل بنجاح! سيتم توجيهك.");
                         window.location.href = "index.html";
                     }
                 }
             } catch (err) {
                 alert("حدث خطأ غير متوقع: " + err.message);
-                btn.innerText = "تسجيل الحساب الآن";
-                btn.style.opacity = "1";
+                status.innerText = err.message;
             }
         }
     </script>
