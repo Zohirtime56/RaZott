@@ -3,69 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول للمنجم</title>
+    <title>تسجيل الدخول (فحص)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .login-box { border: 2px solid #ffd700; padding: 30px; border-radius: 15px; max-width: 400px; margin: 50px auto; background: #111; }
-        h2 { color: #ffd700; margin-bottom: 30px; }
+        .debug-box {
+            background: #111; border: 1px dashed #0f0; color: #0f0; 
+            padding: 10px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 50px; font-size: 12px;
+        }
+        .login-box { border: 2px solid #ffd700; padding: 30px; border-radius: 15px; max-width: 400px; margin: 20px auto; background: #1a1a1a; }
         input { background: #333; color: white; border: 1px solid #555; padding: 15px; width: 90%; margin-bottom: 15px; border-radius: 5px; font-size: 16px;}
         button { background: #ffd700; color: black; width: 98%; padding: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; }
-        a { color: #888; text-decoration: none; font-size: 14px; display: block; margin-top: 20px; }
-        a:hover { color: #ffd700; }
+        a { color: #ffd700; text-decoration: none; }
     </style>
 </head>
 <body>
 
+    <div id="logs" class="debug-box">Starting Login System...</div>
+
     <div class="login-box">
-        <h2>🔐 دخول المنجم</h2>
+        <h2 style="color: #ffd700;">🔐 دخول المنجم</h2>
         
         <input type="email" id="email" placeholder="البريد الإلكتروني">
         <input type="password" id="password" placeholder="كلمة المرور">
         
         <button id="loginBtn">دخول الآن 🚀</button>
         
-        <p id="msg" style="color: yellow; margin-top: 15px;"></p>
-        
-        <hr style="border-color: #333; margin-top: 30px;">
-        <a href="register.html">ليس لديك حساب؟ إنشاء حساب جديد</a>
+        <div style="margin-top: 20px;">
+            <a href="register.html">ليس لديك حساب؟ إنشاء حساب</a>
+        </div>
     </div>
 
     <script>
-        // إعداد المفاتيح (نفس الطريقة الآمنة)
-        const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
-        const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
-        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-        const SUPABASE_KEY = PART_1 + PART_2;
+        function log(msg) {
+            const box = document.getElementById('logs');
+            box.innerHTML = `> ${msg}<br>` + box.innerHTML;
+        }
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        log("Step 1: Script loaded.");
 
-        document.getElementById('loginBtn').onclick = async function() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('msg');
+        try {
+            // المفاتيح مقسمة لمنع أخطاء النسخ
+            const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+            const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+            const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+            const SUPABASE_KEY = PART_1 + PART_2;
 
-            if(!email || !password) {
-                msg.innerText = "⚠️ اكتب بياناتك أولاً";
-                return;
-            }
-
-            msg.innerText = "جاري التحقق... ⏳";
-
-            // عملية تسجيل الدخول
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-
-            if (error) {
-                msg.innerText = "❌ خطأ: " + error.message;
+            if (!window.supabase) {
+                log("❌ ERROR: Supabase library missing!");
             } else {
-                msg.innerText = "✅ تم الدخول بنجاح!";
-                // توجيه المستخدم لصفحة لوحة التحكم
-                window.location.href = "dashboard.html";
+                var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                log("✅ Step 2: Connected to Supabase.");
             }
-        };
+
+            document.getElementById('loginBtn').onclick = async function() {
+                log("🔘 Button Clicked!");
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                if(!email || !password) {
+                    alert("⚠️ اكتب الإيميل وكلمة السر!");
+                    return;
+                }
+
+                log(`⏳ Attempting login for: ${email}...`);
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    log("❌ Login Failed: " + error.message);
+                    alert("خطأ: " + error.message);
+                } else {
+                    log("🎉 SUCCESS! Login confirmed.");
+                    log("🚀 Redirecting to dashboard.html...");
+                    
+                    setTimeout(() => {
+                        window.location.href = "dashboard.html";
+                    }, 1000);
+                }
+            };
+
+        } catch (e) {
+            log("🔥 CRASH: " + e.message);
+            alert("خطأ برمجي: " + e.message);
+        }
     </script>
 </body>
 </html>
