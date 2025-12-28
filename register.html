@@ -3,116 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل حساب جديد</title>
+    <title>تسجيل حساب (وضع الفحص)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        body { background-color: #000000 !important; color: white !important; text-align: center; padding-top: 40px; font-family: 'Segoe UI', sans-serif; }
-        .login-box {
-            background-color: #1a1a1a; border: 2px solid #ffd700; padding: 20px;
-            border-radius: 15px; max-width: 90%; margin: 0 auto;
+        body { background-color: #000; color: white; padding: 20px; font-family: sans-serif; }
+        .debug-box {
+            background: #222; border: 1px dashed yellow; color: #0f0; 
+            padding: 10px; margin-bottom: 20px; font-family: monospace; 
+            font-size: 12px; text-align: left; direction: ltr; min-height: 100px;
         }
-        input {
-            background-color: #333 !important; color: #fff !important; border: 1px solid #777 !important;
-            padding: 15px !important; margin-bottom: 15px; border-radius: 8px; width: 100%;
-        }
-        .btn-gold {
-            background-color: #ffd700 !important; color: #000000 !important; font-weight: bold;
-            font-size: 18px; padding: 12px; border: none; width: 100%; border-radius: 8px; cursor: pointer;
-        }
-        .btn-gold:active { transform: scale(0.98); background-color: #e6c200 !important; }
-        a { color: #ffd700; text-decoration: none; }
-        #status { color: yellow; margin-top: 10px; font-weight: bold; }
+        .login-box { border: 2px solid #ffd700; padding: 20px; border-radius: 10px; }
+        input { background: #333; color: white; border: 1px solid #555; width: 100%; padding: 10px; margin-bottom: 10px; }
+        button { background: #ffd700; color: black; width: 100%; padding: 12px; font-weight: bold; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2 style="color: #ffd700; margin-bottom: 20px;">🚀 إنشاء حساب</h2>
-        
-        <div class="login-box">
-            <input type="email" id="email" placeholder="✉️ البريد الإلكتروني">
-            <input type="password" id="password" placeholder="🔑 كلمة المرور">
-            
-            <button id="regBtn" onclick="safeRegister()" class="btn-gold">تسجيل الحساب الآن</button>
-            
-            <p id="status"></p>
-            <hr style="border-color: #555;">
-            <a href="index.html">لدي حساب بالفعل؟ تسجيل الدخول</a>
+    <h5 style="color: yellow;">شاشة المبرمج (Logs):</h5>
+    <div id="logs" class="debug-box">Waiting for logs...<br></div>
+
+    <div class="login-box">
+        <h3>إنشاء حساب جديد</h3>
+        <input type="email" id="email" placeholder="email@example.com">
+        <input type="password" id="password" placeholder="Password">
+        <button id="btn">تسجيل الحساب</button>
+        <div style="margin-top: 15px;">
+            <a href="index.html" style="color: #ffd700;">رجوع لتسجيل الدخول</a>
         </div>
     </div>
 
     <script>
-        // كود الطوارئ: لاكتشاف أي خطأ في التحميل فوراً
-        window.onerror = function(msg, url, line) {
-            alert("⚠️ حدث خطأ فني: " + msg);
-            document.getElementById('status').innerText = "خطأ في النظام: " + msg;
-            return true;
-        };
-
-        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
-
-        let supabase;
-
-        // محاولة تهيئة النظام بأمان
-        try {
-            if (window.supabase) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            } else {
-                document.getElementById('status').innerText = "❌ جاري تحميل المكتبة... انتظر قليلاً";
-            }
-        } catch (e) {
-            console.error(e);
+        // دالة الكتابة في الشاشة السوداء
+        function log(msg) {
+            const box = document.getElementById('logs');
+            box.innerHTML += `> ${msg}<br>`;
+            console.log(msg);
         }
 
-        async function safeRegister() {
-            // فحص 1: هل الزر يستجيب؟
-            const status = document.getElementById('status');
-            status.innerText = "جاري المعالجة... ⏳";
+        log("Step 1: Script started execution.");
 
-            // فحص 2: هل المكتبة محملة؟
-            if (!window.supabase || !supabase) {
-                alert("❌ خطأ: النت ضعيف، مكتبة النظام لم تتحمل بعد. قم بتحديث الصفحة.");
-                status.innerText = "مشكلة في تحميل النظام (Supabase missing)";
-                return;
+        // إعداد Supabase
+        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
+        
+        let supabase = null;
+
+        try {
+            if (window.supabase) {
+                log("Step 2: Supabase library found.");
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                log("Step 3: Client initialized.");
+            } else {
+                log("ERROR: Supabase library NOT found (Check internet).");
             }
+        } catch (e) {
+            log("CRASH during init: " + e.message);
+        }
 
+        // ربط الزر (الطريقة الآمنة)
+        const btn = document.getElementById('btn');
+        btn.addEventListener('click', async function() {
+            log("Button CLICKED!"); // إذا ظهرت هذه، فالزر يعمل
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            if(!email || !password) {
-                alert("⚠️ اكتب الإيميل وكلمة السر!");
-                status.innerText = "البيانات ناقصة";
+            if (!email || !password) {
+                log("Warning: Empty fields.");
+                alert("اكتب البيانات!");
                 return;
             }
 
+            if (!supabase) {
+                log("Error: Supabase is not ready.");
+                alert("النظام غير جاهز، حدث الصفحة.");
+                return;
+            }
+
+            log(`Attempting signup for: ${email}`);
+            btn.innerText = "جاري الاتصال...";
+
             try {
-                // محاولة التسجيل
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password
                 });
 
                 if (error) {
-                    alert("❌ فشل التسجيل: " + error.message);
-                    status.innerText = "خطأ: " + error.message;
+                    log("Signup ERROR: " + error.message);
+                    alert("خطأ: " + error.message);
+                    btn.innerText = "حاول مجدداً";
                 } else {
+                    log("Signup SUCCESS! User ID: " + (data.user?.id || 'unknown'));
+                    
+                    // محاولة إنشاء البروفايل
                     if (data.user) {
-                        // محاولة إنشاء البروفايل
-                        await supabase.from('profiles').insert([
+                        const { error: dbError } = await supabase.from('profiles').insert([
                             { id: data.user.id, username: email.split('@')[0] }
                         ]);
-                        alert("🎉 تم التسجيل بنجاح! سيتم توجيهك.");
-                        window.location.href = "index.html";
+                        if (dbError) log("DB Insert Error: " + dbError.message);
+                        else log("Profile created.");
                     }
+
+                    alert("تم التسجيل! مبروك.");
+                    window.location.href = "index.html";
                 }
             } catch (err) {
-                alert("حدث خطأ غير متوقع: " + err.message);
-                status.innerText = err.message;
+                log("Catch Error: " + err.message);
             }
-        }
+        });
+
+        log("Step 4: Event listener attached. Ready.");
     </script>
 </body>
 </html>
