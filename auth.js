@@ -1,6 +1,6 @@
 // إعدادات SUPABASE (ضع مفاتيحك هنا)
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_PUBLIC_KEY'; 
+const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Xfac2hs9ZyQdfIzyDMcpTA_bh7c8GuE'; 
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
