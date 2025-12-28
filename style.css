@@ -1,0 +1,123 @@
+/* إعدادات عامة - الوضع المظلم */
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+}
+
+.game-title {
+    text-align: center;
+    color: #ffd700;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* تصميم الكروت الزجاجية */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* حقول الإدخال */
+.custom-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #222;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.custom-input:focus {
+    outline: none;
+    border-color: #ffd700;
+}
+
+/* الأزرار */
+.btn-main {
+    width: 100%;
+    padding: 12px;
+    background: #ffd700;
+    border: none;
+    color: #000;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-outline {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #ffd700;
+    color: #ffd700;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.btn-collect {
+    width: 100%;
+    background: linear-gradient(45deg, #28a745, #218838);
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 10px;
+    margin-top: 15px;
+    animation: pulse 2s infinite;
+}
+
+/* منطقة التعدين */
+.mining-container {
+    text-align: center;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.stat-box {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #333;
+}
+
+.live-counter {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* تأثير النبض لزر الجمع */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* أدوات مساعدة */
+.d-none { display: none !important; }
