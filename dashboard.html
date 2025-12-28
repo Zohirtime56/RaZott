@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التعدين</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .debug-box {
@@ -16,17 +16,18 @@
         .balance-text { font-size: 30px; color: #0f0; font-family: monospace; }
         button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <h5 style="color: gray;">حالة النظام:</h5>
-    <div id="logs" class="debug-box">Waiting for page load...</div>
+    <div id="logs" class="debug-box">Script starting...</div>
 
-    <div id="loading_msg" style="color: yellow; font-size: 18px;">جاري تجهيز المنجم... ⏳</div>
+    <div id="loading_msg" style="color: yellow; font-size: 18px;">جاري الاتصال بالقمر الصناعي... 📡</div>
 
     <div id="main-app" class="dashboard-box">
         <h1 style="color: #ffd700;">⛏️ المنجم</h1>
-        <p>مرحباً: <span id="user-email" style="color: cyan;"></span></p>
+        <p>المستخدم: <span id="user-email" style="color: cyan;"></span></p>
 
         <div class="stat-card">
             <small>💰 الرصيد</small>
@@ -38,78 +39,69 @@
             <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
 
-        <button onclick="logout()" style="background: #dc3545; color: white;">تسجيل خروج</button>
+        <button onclick="logout()" style="background: #dc3545; color: white;">خروج</button>
     </div>
 
     <script>
-        // دالة التسجيل في الشاشة السوداء
         function log(msg) {
             const box = document.getElementById('logs');
-            box.innerHTML += `> ${msg}<br>`;
+            box.innerHTML = `> ${msg}<br>` + box.innerHTML;
         }
 
-        // التقاط أي خطأ برمجي فوراً
-        window.onerror = function(msg, url, line) {
-            log(`❌ CRASH ERROR: ${msg}`);
-            alert("حدث خطأ: " + msg);
-        };
-
-        // مفاتيحك
+        // مفاتيح الاتصال
         const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
         const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
         const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
         const SUPABASE_KEY = PART_1 + PART_2;
 
         let supabase = null;
+        let checks = 0;
 
-        // هذه الدالة تعمل فقط عندما تنتهي الصفحة من التحميل تماماً
-        window.onload = async function() {
-            log("1. Page Loaded. Checking library...");
+        // دالة تفحص وجود المكتبة كل نصف ثانية
+        const timer = setInterval(() => {
+            checks++;
+            log(`Checking library... Attempt ${checks}`);
 
             if (window.supabase) {
-                log("✅ Library found. Connecting...");
-                startApp();
-            } else {
-                log("⚠️ Library missing! Retrying in 1 second...");
-                setTimeout(() => {
-                    if(window.supabase) startApp();
-                    else {
-                        log("❌ FAILED: Check Internet connection.");
-                        alert("الإنترنت ضعيف، المكتبة لم تتحمل.");
-                    }
-                }, 1000);
+                clearInterval(timer); // توقف عن الفحص، وجدناها!
+                log("✅ Library found! Starting system...");
+                initSystem();
+            } else if (checks > 10) {
+                log("⚠️ Library slow... loading backup...");
+                // إضافة مصدر بديل إذا تأخر المصدر الأول
+                let script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                document.head.appendChild(script);
             }
-        };
+        }, 500);
 
-        async function startApp() {
+        async function initSystem() {
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 
-                log("2. Checking Session...");
+                log("Checking User Session...");
                 const { data } = await supabase.auth.getSession();
 
                 if (!data.session) {
-                    log("⛔ No user found. Go to login.");
-                    setTimeout(() => window.location.href = "index.html", 1500);
+                    log("⛔ No session. Redirecting to login...");
+                    setTimeout(() => window.location.href = "index.html", 1000);
                     return;
                 }
 
                 const user = data.session.user;
                 document.getElementById('user-email').innerText = user.email;
-                log(`✅ User: ${user.email}`);
+                log("User confirmed.");
 
-                log("3. Getting Profile...");
-                
-                // جلب البيانات
+                // جلب أو إنشاء البروفايل
+                log("Loading Profile...");
                 let { data: profile, error } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
 
-                if (error || !profile) {
-                    log("⚠️ Profile missing. Creating new one...");
-                    // إنشاء بروفايل جديد
+                if (!profile) {
+                    log("Creating new profile...");
                     await supabase.from('profiles').insert([
                         { id: user.id, username: user.email.split('@')[0], balance: 0 }
                     ]);
@@ -118,24 +110,25 @@
                     document.getElementById('balance').innerText = profile.balance.toFixed(4);
                 }
 
-                // فتح التطبيق
-                log("🎉 DONE! Opening Dashboard.");
+                // تشغيل الشاشة
+                log("🎉 System Ready!");
                 document.getElementById('loading_msg').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
 
-                // تشغيل العداد
+                // عداد الأرباح
                 setInterval(() => {
                     let current = parseFloat(document.getElementById('pending').innerText);
                     document.getElementById('pending').innerText = (current + 0.00001).toFixed(5);
                 }, 1000);
 
             } catch (err) {
-                log(`🔥 ERROR in startApp: ${err.message}`);
+                log(`🔥 ERROR: ${err.message}`);
+                alert("خطأ: " + err.message);
             }
         }
 
         async function logout() {
-            await supabase.auth.signOut();
+            if(supabase) await supabase.auth.signOut();
             window.location.href = "index.html";
         }
     </script>
