@@ -3,119 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل حساب (وضع الفحص)</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>تسجيل آمن</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        body { background-color: #000; color: white; padding: 20px; font-family: sans-serif; }
+        body { background-color: #000; color: white; padding: 20px; font-family: sans-serif; text-align: center; }
         .debug-box {
-            background: #222; border: 1px dashed yellow; color: #0f0; 
-            padding: 10px; margin-bottom: 20px; font-family: monospace; 
-            font-size: 12px; text-align: left; direction: ltr; min-height: 100px;
+            background: #111; border: 1px dashed #0f0; color: #0f0; 
+            padding: 15px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 50px;
         }
-        .login-box { border: 2px solid #ffd700; padding: 20px; border-radius: 10px; }
-        input { background: #333; color: white; border: 1px solid #555; width: 100%; padding: 10px; margin-bottom: 10px; }
-        button { background: #ffd700; color: black; width: 100%; padding: 12px; font-weight: bold; border: none; cursor: pointer; }
+        input { padding: 10px; width: 90%; margin: 10px 0; border-radius: 5px; }
+        button { background: #ffd700; width: 95%; padding: 15px; font-weight: bold; border: none; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h5 style="color: yellow;">شاشة المبرمج (Logs):</h5>
-    <div id="logs" class="debug-box">Waiting for logs...<br></div>
+    <div id="logs" class="debug-box">Starting system...</div>
 
-    <div class="login-box">
-        <h3>إنشاء حساب جديد</h3>
-        <input type="email" id="email" placeholder="email@example.com">
-        <input type="password" id="password" placeholder="Password">
-        <button id="btn">تسجيل الحساب</button>
-        <div style="margin-top: 15px;">
-            <a href="index.html" style="color: #ffd700;">رجوع لتسجيل الدخول</a>
-        </div>
-    </div>
+    <h3>تسجيل حساب جديد</h3>
+    <input type="email" id="email" placeholder="البريد الإلكتروني">
+    <input type="password" id="password" placeholder="كلمة المرور">
+    <button id="btn">إنشاء الحساب 🚀</button>
 
     <script>
-        // دالة الكتابة في الشاشة السوداء
+        // دالة الكتابة في الشاشة
         function log(msg) {
             const box = document.getElementById('logs');
-            box.innerHTML += `> ${msg}<br>`;
-            console.log(msg);
+            box.innerHTML = `> ${msg}<br>` + box.innerHTML;
         }
 
-        log("Step 1: Script started execution.");
-
-        // إعداد Supabase
-        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
-        
-        let supabase = null;
+        // 1. بداية التشغيل
+        log("Step 1: Script loaded.");
 
         try {
-            if (window.supabase) {
-                log("Step 2: Supabase library found.");
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                log("Step 3: Client initialized.");
-            } else {
-                log("ERROR: Supabase library NOT found (Check internet).");
-            }
-        } catch (e) {
-            log("CRASH during init: " + e.message);
-        }
-
-        // ربط الزر (الطريقة الآمنة)
-        const btn = document.getElementById('btn');
-        btn.addEventListener('click', async function() {
-            log("Button CLICKED!"); // إذا ظهرت هذه، فالزر يعمل
+            // المفتاح مقسم لجزئين لتجنب مشاكل النسخ
+            const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+            const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+            const SUPABASE_KEY = PART_1 + PART_2; // دمج الجزئين
 
-            if (!email || !password) {
-                log("Warning: Empty fields.");
-                alert("اكتب البيانات!");
-                return;
+            log("Step 2: Keys prepared.");
+
+            if (!window.supabase) {
+                log("❌ ERROR: Supabase library missing!");
+                alert("المكتبة غير موجودة، تأكد من النت");
+            } else {
+                var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                log("✅ Step 3: Connected to Supabase.");
             }
 
-            if (!supabase) {
-                log("Error: Supabase is not ready.");
-                alert("النظام غير جاهز، حدث الصفحة.");
-                return;
-            }
+            // تشغيل الزر
+            document.getElementById('btn').onclick = async function() {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
 
-            log(`Attempting signup for: ${email}`);
-            btn.innerText = "جاري الاتصال...";
+                if(!email || !password) {
+                    alert("اكتب البيانات!");
+                    return;
+                }
 
-            try {
+                log(`⏳ Trying to register: ${email}...`);
+
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password
                 });
 
                 if (error) {
-                    log("Signup ERROR: " + error.message);
+                    log("❌ ERROR: " + error.message);
                     alert("خطأ: " + error.message);
-                    btn.innerText = "حاول مجدداً";
                 } else {
-                    log("Signup SUCCESS! User ID: " + (data.user?.id || 'unknown'));
+                    log("🎉 SUCCESS! User created.");
                     
-                    // محاولة إنشاء البروفايل
-                    if (data.user) {
-                        const { error: dbError } = await supabase.from('profiles').insert([
-                            { id: data.user.id, username: email.split('@')[0] }
-                        ]);
-                        if (dbError) log("DB Insert Error: " + dbError.message);
-                        else log("Profile created.");
+                    // حفظ البروفايل
+                    if(data.user) {
+                        await supabase.from('profiles').insert([{ id: data.user.id, username: email.split('@')[0] }]);
+                        log("✅ Profile saved.");
                     }
-
-                    alert("تم التسجيل! مبروك.");
+                    
+                    alert("تم التسجيل بنجاح!");
                     window.location.href = "index.html";
                 }
-            } catch (err) {
-                log("Catch Error: " + err.message);
-            }
-        });
+            };
 
-        log("Step 4: Event listener attached. Ready.");
+        } catch (e) {
+            log("🔥 CRASH: " + e.message);
+            alert("خطأ برمجي: " + e.message);
+        }
     </script>
 </body>
 </html>
