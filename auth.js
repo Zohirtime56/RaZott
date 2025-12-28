@@ -1,69 +1,50 @@
-// إعدادات SUPABASE (ضع مفاتيحك هنا)
+// تأكد من وضع مفاتيحك هنا
 const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Xfac2hs9ZyQdfIzyDMcpTA_bh7c8GuE'; 
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// دالة تسجيل الدخول
-async function loginUser() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const msg = document.getElementById('msg');
-
-    msg.innerText = "جاري التحقق...";
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
-
-    if (error) {
-        msg.innerText = "خطأ: " + error.message;
-    } else {
-        // توجيه المستخدم لصفحة اللعبة
-        window.location.href = "dashboard.html";
-    }
-}
-
-// دالة إنشاء حساب
 async function registerUser() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const msg = document.getElementById('msg');
+    const msg = document.getElementById('msg'); // تأكد أن لديك عنصر p بهذا الآيدي في HTML
 
-    msg.innerText = "جاري إنشاء الحساب...";
+    // 1. فحص الحقول
+    if (!email || !password) {
+        alert("الرجاء كتابة الإيميل وكلمة السر");
+        return;
+    }
 
-    const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password
-    });
+    msg.innerText = "جاري الاتصال بالسيرفر...";
 
-    if (error) {
-        msg.innerText = error.message;
-    } else {
-        // إنشاء بيانات اللاعب في الجدول
-        if (data.user) {
-            await supabase.from('profiles').insert([
-                { id: data.user.id, username: email.split('@')[0] }
-            ]);
-            alert("تم إنشاء الحساب بنجاح! سجل دخولك الآن.");
-            window.location.href = "index.html";
+    try {
+        // 2. محاولة التسجيل
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            alert("خطأ من Supabase: " + error.message); // سيظهر لك سبب المشكلة هنا
+            msg.innerText = "فشل التسجيل";
+        } else {
+            // 3. التسجيل نجح، الآن ننشئ البروفايل
+            alert("تم التسجيل! جاري إنشاء البروفايل...");
+            
+            if (data.user) {
+                const { error: profileError } = await supabase.from('profiles').insert([
+                    { id: data.user.id, username: email.split('@')[0] }
+                ]);
+
+                if (profileError) {
+                    alert("مشكلة في الجدول: " + profileError.message);
+                } else {
+                    alert("🎉 تم كل شيء بنجاح! سيتم تحويلك.");
+                    window.location.href = "index.html";
+                }
+            }
         }
+    } catch (err) {
+        alert("خطأ في الكود نفسه: " + err.message);
     }
 }
-
-// دالة الخروج
-async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = "index.html";
-}
-
-// التحقق من الجلسة (يوضع في صفحة الداشبورد)
-async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = "index.html"; // طرد المستخدم إذا لم يكن مسجلاً
-    } else {
-        return session.user;
-    }
-      }
