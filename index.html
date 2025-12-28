@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منجم الذهب | Gold Miner</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1 class="game-title">⛏️ كريبتو ماينر ⛏️</h1>
+
+        <div id="alert-box" class="alert alert-warning d-none"></div>
+
+        <section id="login-section">
+            <div class="glass-card">
+                <h3>بوابة الدخول</h3>
+                <input type="email" id="email" class="custom-input" placeholder="البريد الإلكتروني">
+                <input type="password" id="password" class="custom-input" placeholder="كلمة المرور">
+                
+                <div class="btn-group-custom">
+                    <button onclick="signIn()" class="btn-main">دخول</button>
+                    <button onclick="signUp()" class="btn-outline">تسجيل جديد</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard-section" class="d-none">
+            <div class="glass-card user-info">
+                <p>مرحباً، <span id="user-display">اللاعب</span> 👋</p>
+                <button onclick="logout()" class="btn-logout">خروج</button>
+            </div>
+
+            <div class="mining-container">
+                <div class="miner-animation">
+                    <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LdOyjZ7FKs0RlAzU8a/giphy.gif" alt="Mining">
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <small>الرصيد المحفوظ</small>
+                        <h2 id="balance">0.0000</h2>
+                    </div>
+                    <div class="stat-box">
+                        <small>قوة التعدين</small>
+                        <h4 id="power">0 / ث</h4>
+                    </div>
+                </div>
+
+                <div class="profit-area">
+                    <h5>أرباح غير مجمعة: <span id="pending" class="live-counter">0.0000</span></h5>
+                    <button onclick="collect()" class="btn-collect">جمع الذهب الآن 💰</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+                  </html>
