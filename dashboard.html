@@ -7,10 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        body { background-color: #000; color: white; font-family: monospace; text-align: center; padding: 20px; }
         .debug-box {
             background: #111; border: 1px dashed red; color: #ff4444; 
             padding: 15px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 50px; font-weight: bold;
+            word-break: break-all;
         }
         .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
         .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
@@ -21,52 +22,51 @@
 <body>
 
     <div id="error-log" class="debug-box" style="border-color: yellow; color: yellow;">
-        جاري تجميع أجزاء الرابط... 🧩
+        جاري تعقيم الرابط... 🧼
     </div>
 
     <div id="main-app" class="dashboard-box">
         <h1 style="color: #ffd700;">⛏️ المنجم</h1>
         <p>المستخدم: <span id="user-email" style="color: cyan;"></span></p>
-
         <div class="stat-card">
             <small>💰 الرصيد</small>
             <div id="balance" class="balance-text">---</div>
         </div>
-
         <div class="stat-card">
             <small>أرباح جاري تعدينها</small>
             <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
-
         <button onclick="logout()" style="background: #dc3545; color: white;">خروج</button>
     </div>
 
     <script>
-        function logError(msg) {
+        function log(msg, color="yellow") {
             const box = document.getElementById('error-log');
-            box.style.borderColor = "red";
-            box.style.color = "red";
-            box.innerHTML = `⚠️ خطأ:<br>${msg}`;
+            box.style.color = color;
+            box.style.borderColor = color;
+            box.innerHTML = msg;
         }
 
-        // --- التفكيك الذكي للرابط والمفتاح ---
-        // 1. تجميع الرابط من 3 قطع لمنع الأخطاء
-        const PART_A = "https://";
-        const PART_B = "oezehdkfucwhttsrocsv"; // معرف مشروعك فقط
-        const PART_C = ".supabase.co";
-        
-        // 2. تجميع المفتاح (كما فعلنا سابقاً ونجح)
-        const KEY_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        const KEY_2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
-        const KEY_3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        // --- البيانات الخام ---
+        // لا تغير أي شيء هنا
+        const rawUrl = "https://oezehdkfucwhttsrocsv.supabase.co";
+        const rawKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
 
-        // التجميع النهائي (نظيف ومضمون 100%)
-        const URL = PART_A + PART_B + PART_C;
-        const KEY = KEY_1 + KEY_2 + KEY_3;
+        // --- الفلتر النووي (Clean Function) ---
+        // هذا الكود يحذف أي حرف "غير مرئي" أو مسافة أو رمز غريب
+        function cleanString(str) {
+            return str.replace(/[^a-zA-Z0-9:./_-]/g, "");
+        }
+
+        const URL = cleanString(rawUrl);
+        const KEY = cleanString(rawKey);
 
         async function start() {
+            // عرض الرابط النهائي للتأكد
+            log(`Checking URL: ${URL}<br>Length: ${URL.length}`, "cyan");
+
             if (!window.supabase) {
-                logError("المكتبة غير موجودة! جاري إعادة التحميل...");
+                log("⚠️ المكتبة تتحمل... انتظر", "orange");
                 setTimeout(() => window.location.reload(), 2000);
                 return;
             }
@@ -75,11 +75,11 @@
                 // محاولة الاتصال
                 const sb = window.supabase.createClient(URL, KEY);
                 
-                // فحص الجلسة
-                const { data } = await sb.auth.getSession();
+                const { data, error } = await sb.auth.getSession();
                 
+                if (error) throw error;
                 if (!data.session) {
-                    window.location.href = "index.html"; // غير مسجل؟ ارجع للدخول
+                    window.location.href = "index.html"; 
                     return;
                 }
                 
@@ -92,23 +92,21 @@
                 if(profile) {
                     document.getElementById('balance').innerText = profile.balance.toFixed(4);
                 } else {
-                    // مستخدم جديد؟ ننشئ له رصيداً
                     await sb.from('profiles').insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
                     document.getElementById('balance').innerText = "0.0000";
                 }
                 
-                // 🟢 إخفاء رسائل الخطأ وفتح المنجم
+                // نجاح!
                 document.getElementById('error-log').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 
-                // تشغيل العداد
                 setInterval(() => {
                     let el = document.getElementById('pending');
                     el.innerText = (parseFloat(el.innerText) + 0.00001).toFixed(5);
                 }, 1000);
 
             } catch (err) {
-                logError("خطأ فني: " + err.message);
+                log(`🔥 خطأ قاتل:<br>${err.message}<br>URL Used: ${URL}`, "red");
             }
         }
 
