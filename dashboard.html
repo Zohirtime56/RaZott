@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منجم الذهب</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h3>أهلاً بك في المنجم ⛏️</h3>
+        
+        <div class="mining-stat">
+            الرصيد: <span id="balance">0.0000</span> $
+        </div>
+        
+        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LdOyjZ7FKs0RlAzU8a/giphy.gif" width="100">
+        
+        <p>قوة التعدين: <span id="power">...</span> / ثانية</p>
+        <button onclick="collect()" style="background:green; color:white;">جمع الأرباح 💰</button>
+        <button onclick="logout()" style="background:red; margin-top:20px;">خروج</button>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // كود خاص بهذه الصفحة فقط
+        let user_id;
+        
+        // عند تحميل الصفحة، تأكد أن المستخدم مسجل دخول
+        window.onload = async function() {
+            const user = await checkSession();
+            user_id = user.id;
+            loadData();
+        };
+
+        async function loadData() {
+            const { data } = await supabase.from('profiles').select('*').eq('id', user_id).single();
+            if(data) {
+                document.getElementById('balance').innerText = data.balance.toFixed(4);
+                document.getElementById('power').innerText = data.mining_power;
+            }
+        }
+        
+        // دالة الجمع (مختصرة للتجربة)
+        async function collect() {
+            alert("سيتم إضافة ميزة الجمع هنا في التحديث القادم!");
+            // يمكنك نسخ دالة الجمع الكاملة هنا لاحقاً
+        }
+    </script>
+</body>
+</html>
