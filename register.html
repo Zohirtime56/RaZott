@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب جديد</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>🚀 حساب جديد</h2>
+        <p>ابدأ رحلة التعدين مجاناً</p>
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+        <input type="password" id="password" placeholder="كلمة المرور">
+        <button onclick="registerUser()">إنشاء الحساب</button>
+        
+        <p class="alert" id="msg"></p>
+        
+        <div style="margin-top: 15px;">
+            <a href="index.html">لديك حساب بالفعل؟ سجل دخول</a>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+</body>
+</html>
