@@ -3,130 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التعدين</title>
+    <title>لوحة التعدين (تشخيص)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto; background: #1a1a1a; }
+        .debug-box {
+            background: #111; border: 1px dashed #ffd700; color: #0f0; 
+            padding: 10px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 100px; font-size: 12px;
+        }
+        .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
         .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
         h1 { color: #ffd700; }
         .balance-text { font-size: 30px; color: #0f0; font-family: monospace; }
         .pending-text { font-size: 24px; color: #ffd700; font-family: monospace; }
         button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
         .btn-collect { background: #28a745; color: white; }
-        .btn-logout { background: #dc3545; color: white; margin-top: 30px; }
-        #loading { margin-top: 50px; font-size: 20px; color: yellow; }
     </style>
 </head>
 <body>
 
-    <div id="loading">
-        جاري إصلاح البيانات والدخول... ⛏️<br>
-        <small style="color: gray;">(قد يستغرق بضع ثوانٍ)</small>
-    </div>
+    <h5 style="color: yellow;">سجل النظام (Logs):</h5>
+    <div id="logs" class="debug-box">Initializing...<br></div>
 
-    <div id="main-app" style="display: none;">
-        <h1>⛏️ منطقة التعدين</h1>
-        <p>مرحباً: <span id="user-email" style="color: #00d4ff;"></span></p>
+    <div id="loading_msg">جاري تحميل البيانات... ⏳</div>
 
-        <div class="dashboard-box">
-            <div class="stat-card">
-                <small>💰 الرصيد المحفوظ</small>
-                <div id="balance" class="balance-text">0.0000</div>
-            </div>
+    <div id="main-app" class="dashboard-box">
+        <h1>⛏️ المنجم</h1>
+        <p>مستخدم: <span id="user-email" style="color: cyan;"></span></p>
 
-            <div class="stat-card">
-                <small>⚡ قوة التعدين</small>
-                <div id="power" style="font-size: 18px;">0.0001 / ثانية</div>
-            </div>
-
-            <div style="margin: 20px;">
-                <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LdOyjZ7FKs0RlAzU8a/giphy.gif" width="100">
-            </div>
-
-            <div class="stat-card" style="border-color: #ffd700;">
-                <small>أرباح جاري تعدينها الآن...</small>
-                <div id="pending" class="pending-text">0.00000</div>
-            </div>
-
-            <button onclick="collect()" class="btn-collect">جمع الأرباح للمحفظة 📥</button>
+        <div class="stat-card">
+            <small>💰 الرصيد</small>
+            <div id="balance" class="balance-text">---</div>
         </div>
 
-        <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+        <div class="stat-card">
+            <small>أرباح جاري تعدينها</small>
+            <div id="pending" class="pending-text">0.00000</div>
+        </div>
+
+        <button onclick="collect()" class="btn-collect">جمع الأرباح</button>
+        <button onclick="logout()" style="background: red; color: white; margin-top: 20px;">خروج</button>
     </div>
 
     <script>
-        // مفاتيح الاتصال
+        function log(msg) {
+            const box = document.getElementById('logs');
+            box.innerHTML += `> ${msg}<br>`;
+        }
+
+        // كشف الأخطاء العامة
+        window.onerror = function(msg, url, line) {
+            log(`🔥 CRASH: ${msg} (Line: ${line})`);
+            return false;
+        };
+
         const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
         const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
         const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
         const SUPABASE_KEY = PART_1 + PART_2;
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let currentUser = null;
         let miningPower = 0.0001;
 
-        async function initDashboard() {
-            // 1. هل المستخدم مسجل دخول؟
+        async function init() {
+            log("1. Checking session...");
             const { data } = await supabase.auth.getSession();
+            
             if (!data.session) {
-                window.location.href = "index.html"; // طرد المستخدم إذا لم يسجل
+                log("❌ No session found. Redirecting...");
+                setTimeout(() => window.location.href = "index.html", 2000);
                 return;
             }
 
-            currentUser = data.session.user;
-            document.getElementById('user-email').innerText = currentUser.email;
+            const user = data.session.user;
+            document.getElementById('user-email').innerText = user.email;
+            log(`✅ User found: ${user.email}`);
 
-            // 2. محاولة جلب البيانات
+            log("2. Fetching profile from DB...");
+            
+            // محاولة جلب البيانات
             let { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', currentUser.id)
+                .eq('id', user.id)
                 .single();
 
-            // 3. المصلح التلقائي: إذا لم يجد بيانات، ينشئها فوراً
-            if (!profile || error) {
-                console.log("بيانات مفقودة، جاري الإنشاء...");
+            if (error) {
+                log(`⚠️ Fetch Error: ${error.message}`);
+                log("3. Attempting to CREATE profile...");
+                
+                // محاولة إنشاء البروفايل إذا كان مفقوداً
                 const { error: insertError } = await supabase
                     .from('profiles')
-                    .insert([{ id: currentUser.id, username: currentUser.email.split('@')[0], balance: 0 }]);
+                    .insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
                 
-                // تعيين قيم افتراضية لكي يفتح الموقع
-                document.getElementById('balance').innerText = "0.0000";
+                if (insertError) {
+                    log(`❌ Insert Failed: ${insertError.message}`);
+                    log("💡 TIP: Check RLS policies in Supabase!");
+                } else {
+                    log("✅ Profile created successfully!");
+                    document.getElementById('balance').innerText = "0.0000";
+                    showApp();
+                }
             } else {
-                // وجد البيانات، يعرضها
+                log("✅ Profile loaded!");
                 document.getElementById('balance').innerText = profile.balance.toFixed(4);
+                showApp();
             }
+        }
 
-            // 4. إظهار الشاشة وإخفاء التحميل
-            document.getElementById('loading').style.display = 'none';
+        function showApp() {
+            document.getElementById('loading_msg').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             
             // تشغيل العداد
-            startMiningAnimation();
-        }
-
-        function startMiningAnimation() {
-            let tempProfit = 0;
             setInterval(() => {
-                tempProfit += miningPower / 10;
-                document.getElementById('pending').innerText = tempProfit.toFixed(6);
-            }, 100);
-        }
-
-        async function collect() {
-            // كود الجمع البسيط (سنطوره لاحقاً ليتصل بالقاعدة)
-            alert("✅ تم إرسال طلب الجمع! (سيتم تفعيل الحفظ قريباً)");
-            document.getElementById('pending').innerText = "0.00000";
+                let current = parseFloat(document.getElementById('pending').innerText);
+                document.getElementById('pending').innerText = (current + miningPower).toFixed(5);
+            }, 1000);
         }
 
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = "index.html";
         }
+        
+        async function collect() { alert("تم الجمع (تجريبي)"); }
 
-        // تشغيل النظام
-        initDashboard();
+        init();
     </script>
 </body>
 </html>
