@@ -21,7 +21,7 @@
 <body>
 
     <div id="error-log" class="debug-box" style="border-color: yellow; color: yellow;">
-        جاري تنظيف الرابط والاتصال... 🧹
+        جاري تجميع أجزاء الرابط... 🧩
     </div>
 
     <div id="main-app" class="dashboard-box">
@@ -46,32 +46,36 @@
             const box = document.getElementById('error-log');
             box.style.borderColor = "red";
             box.style.color = "red";
-            box.innerHTML = `⚠️ تنبيه هام:<br>${msg}`;
+            box.innerHTML = `⚠️ خطأ:<br>${msg}`;
         }
 
-        // --- البيانات الحساسة ---
-        // ملاحظة: وضعت الرابط والمفتاح كما هما، والكود في الأسفل سينظفهما
-        let rawURL = "https://oezehdkfucwhttsrocsv.supabase.co";
+        // --- التفكيك الذكي للرابط والمفتاح ---
+        // 1. تجميع الرابط من 3 قطع لمنع الأخطاء
+        const PART_A = "https://";
+        const PART_B = "oezehdkfucwhttsrocsv"; // معرف مشروعك فقط
+        const PART_C = ".supabase.co";
         
-        let P1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        let P2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
-        let P3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
-        
-        // --- التنظيف الآلي (إزالة أي مسافات مخفية) ---
-        const URL = rawURL.replace(/\s/g, '').trim(); 
-        const KEY = (P1 + P2 + P3).replace(/\s/g, '').trim();
+        // 2. تجميع المفتاح (كما فعلنا سابقاً ونجح)
+        const KEY_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+        const KEY_2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+        const KEY_3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+
+        // التجميع النهائي (نظيف ومضمون 100%)
+        const URL = PART_A + PART_B + PART_C;
+        const KEY = KEY_1 + KEY_2 + KEY_3;
 
         async function start() {
             if (!window.supabase) {
-                logError("المكتبة غير موجودة! (ضعف إنترنت). جار إعادة المحاولة...");
+                logError("المكتبة غير موجودة! جاري إعادة التحميل...");
                 setTimeout(() => window.location.reload(), 2000);
                 return;
             }
 
             try {
-                // محاولة الاتصال بالبيانات النظيفة
+                // محاولة الاتصال
                 const sb = window.supabase.createClient(URL, KEY);
                 
+                // فحص الجلسة
                 const { data } = await sb.auth.getSession();
                 
                 if (!data.session) {
@@ -93,7 +97,7 @@
                     document.getElementById('balance').innerText = "0.0000";
                 }
                 
-                // 🟢 نجاح! إخفاء رسائل الخطأ وإظهار المنجم
+                // 🟢 إخفاء رسائل الخطأ وفتح المنجم
                 document.getElementById('error-log').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 
@@ -108,7 +112,6 @@
             }
         }
 
-        // تشغيل
         start();
 
         async function logout() {
