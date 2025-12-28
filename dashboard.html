@@ -3,50 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منجم الذهب</title>
-    <link rel="stylesheet" href="style.css">
+    <title>لوحة التعدين</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto; background: #1a1a1a; }
+        .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
+        h1 { color: #ffd700; }
+        .balance-text { font-size: 30px; color: #0f0; font-family: monospace; }
+        .pending-text { font-size: 24px; color: #ffd700; font-family: monospace; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-collect { background: #28a745; color: white; }
+        .btn-logout { background: #dc3545; color: white; margin-top: 30px; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h3>أهلاً بك في المنجم ⛏️</h3>
-        
-        <div class="mining-stat">
-            الرصيد: <span id="balance">0.0000</span> $
+
+    <div id="loading">جاري تحميل المنجم... ⛏️</div>
+
+    <div id="main-app" style="display: none;">
+        <h1>⛏️ منطقة التعدين</h1>
+        <p>مرحباً: <span id="user-email" style="color: #00d4ff;"></span></p>
+
+        <div class="dashboard-box">
+            <div class="stat-card">
+                <small>💰 الرصيد المحفوظ</small>
+                <div id="balance" class="balance-text">0.0000</div>
+            </div>
+
+            <div class="stat-card">
+                <small>⚡ قوة التعدين</small>
+                <div id="power" style="font-size: 18px;">...</div>
+            </div>
+
+            <div style="margin: 20px;">
+                <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LdOyjZ7FKs0RlAzU8a/giphy.gif" width="100">
+            </div>
+
+            <div class="stat-card" style="border-color: #ffd700;">
+                <small>أرباح جاري تعدينها الآن...</small>
+                <div id="pending" class="pending-text">0.00000</div>
+            </div>
+
+            <button onclick="collect()" class="btn-collect">جمع الأرباح للمحفظة 📥</button>
         </div>
-        
-        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzb3ZxeWwzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/LdOyjZ7FKs0RlAzU8a/giphy.gif" width="100">
-        
-        <p>قوة التعدين: <span id="power">...</span> / ثانية</p>
-        <button onclick="collect()" style="background:green; color:white;">جمع الأرباح 💰</button>
-        <button onclick="logout()" style="background:red; margin-top:20px;">خروج</button>
+
+        <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
     </div>
 
-    <script src="auth.js"></script>
     <script>
-        // كود خاص بهذه الصفحة فقط
-        let user_id;
-        
-        // عند تحميل الصفحة، تأكد أن المستخدم مسجل دخول
-        window.onload = async function() {
-            const user = await checkSession();
-            user_id = user.id;
-            loadData();
-        };
+        // إعداد المفاتيح
+        const PART_1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
+        const PART_2 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+        const SUPABASE_KEY = PART_1 + PART_2;
 
-        async function loadData() {
-            const { data } = await supabase.from('profiles').select('*').eq('id', user_id).single();
-            if(data) {
-                document.getElementById('balance').innerText = data.balance.toFixed(4);
-                document.getElementById('power').innerText = data.mining_power;
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUser = null;
+        let miningPower = 0.0001; // القوة الافتراضية
+
+        // 1. التحقق من الدخول عند تشغيل الصفحة
+        async function checkSession() {
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) {
+                // إذا لم يكن مسجلاً، اطرده لصفحة الدخول
+                window.location.href = "index.html";
+            } else {
+                currentUser = data.session.user;
+                document.getElementById('user-email').innerText = currentUser.email;
+                loadProfile();
             }
         }
-        
-        // دالة الجمع (مختصرة للتجربة)
-        async function collect() {
-            alert("سيتم إضافة ميزة الجمع هنا في التحديث القادم!");
-            // يمكنك نسخ دالة الجمع الكاملة هنا لاحقاً
+
+        // 2. جلب بيانات الرصيد من الجدول
+        async function loadProfile() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (data) {
+                document.getElementById('balance').innerText = data.balance.toFixed(4);
+                // miningPower = data.mining_power; // يمكن تفعيل هذا لاحقاً
+                document.getElementById('power').innerText = miningPower + " / ثانية";
+                
+                // إظهار الموقع
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                startMiningAnimation();
+            } else {
+                alert("خطأ في تحميل الملف الشخصي");
+            }
         }
+
+        // 3. عداد وهمي سريع للمتعة البصرية
+        function startMiningAnimation() {
+            let tempProfit = 0;
+            setInterval(() => {
+                tempProfit += miningPower / 10; // زيادة بسيطة كل 100 ملي ثانية
+                document.getElementById('pending').innerText = tempProfit.toFixed(6);
+            }, 100);
+        }
+
+        // 4. زر الجمع (سيتم تفعيله لاحقاً)
+        async function collect() {
+            alert("سيتم إضافة الأرباح للرصيد الأساسي في التحديث القادم!");
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = "index.html";
+        }
+
+        // تشغيل الفحص
+        checkSession();
     </script>
 </body>
 </html>
