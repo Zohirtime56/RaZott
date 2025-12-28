@@ -3,77 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إنشاء حساب جديد</title>
-    <link rel="stylesheet" href="style.css">
+    <title>فحص الاتصال</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { padding: 20px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .red { background-color: #ff4444; color: white; }
+        .green { background-color: #00C851; color: white; }
+        input { padding: 10px; width: 80%; margin: 5px 0; border-radius: 5px; border: none; }
+        button { padding: 10px 20px; background: #ffd700; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px;}
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🚀 حساب جديد</h2>
-        <input type="email" id="email" placeholder="البريد الإلكتروني">
-        <input type="password" id="password" placeholder="كلمة المرور">
-        <button onclick="registerUser()">إنشاء الحساب</button>
-        
-        <p class="alert" id="msg" style="color: yellow;"></p>
-        
-        <div style="margin-top: 15px;">
-            <a href="index.html">لديك حساب بالفعل؟ سجل دخول</a>
-        </div>
+
+    <div id="status-box" class="box red">
+        جاري فحص النظام... ⏳
+    </div>
+
+    <h3>تجربة التسجيل</h3>
+    <input type="email" id="email" placeholder="البريد الإلكتروني">
+    <br>
+    <input type="password" id="password" placeholder="كلمة المرور">
+    <br>
+    <button id="regBtn">تسجيل الحساب (اضغط هنا)</button>
+
+    <div id="log" style="margin-top: 20px; color: yellow; text-align: left; direction: ltr; border: 1px solid #555; padding: 10px;">
+        Console Logs will appear here...
     </div>
 
     <script>
-        // --- الكود مدمج هنا لضمان العمل ---
-        
-        // مفاتيحك الصحيحة
-        const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // دالة لكتابة الأخطاء على الشاشة
+        function log(text) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `<div>>> ${text}</div>`;
+            console.log(text);
+        }
 
-        async function registerUser() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('msg');
-
-            if (!email || !password) {
-                msg.innerText = "⚠️ يرجى تعبئة جميع الحقول";
-                return;
+        // 1. فحص هل المكتبة موجودة؟
+        window.onload = function() {
+            log("Page Loaded. Checking Supabase library...");
+            
+            if (window.supabase) {
+                document.getElementById('status-box').className = "box green";
+                document.getElementById('status-box').innerText = "✅ النظام يعمل: المكتبة محملة بنجاح";
+                log("Library found. Initializing...");
+                initApp();
+            } else {
+                document.getElementById('status-box').innerText = "❌ خطأ: المكتبة لم تتحمل. تأكد من الإنترنت.";
+                log("Error: window.supabase is undefined");
             }
+        };
 
-            msg.innerText = "⏳ جاري الاتصال...";
+        // 2. إعداد التطبيق
+        function initApp() {
+            const SUPABASE_URL = 'https://oezehdkfucwhttsrocsv.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo';
 
             try {
-                // 1. إنشاء المستخدم
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password
-                });
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                log("Supabase Client Created.");
 
-                if (error) {
-                    msg.innerText = "❌ خطأ: " + error.message;
-                    alert("خطأ: " + error.message);
-                } else {
-                    // 2. حفظ البيانات في الجدول
-                    if (data.user) {
-                        const { error: dbError } = await supabase.from('profiles').insert([
-                            { id: data.user.id, username: email.split('@')[0] }
-                        ]);
+                // ربط الزر بالدالة
+                document.getElementById('regBtn').onclick = async function() {
+                    log("Button Clicked. Starting registration...");
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+
+                    if(!email || !password) {
+                        alert("اكتب الإيميل والباسورد!");
+                        log("Empty fields.");
+                        return;
+                    }
+
+                    log(`Attempting signup for: ${email}`);
+
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) {
+                        log("Signup Error: " + error.message);
+                        alert("خطأ: " + error.message);
+                    } else {
+                        log("Signup Success! User ID: " + (data.user ? data.user.id : 'unknown'));
+                        alert("تم التسجيل بنجاح! 🎉");
                         
-                        if (dbError) {
-                            msg.innerText = "⚠️ تم التسجيل لكن فشل حفظ البيانات (تأكد من RLS)";
-                            alert("مشكلة في قاعدة البيانات: " + dbError.message);
-                        } else {
-                            msg.innerText = "✅ تم بنجاح!";
-                            alert("تم إنشاء الحساب بنجاح! سيتم نقلك لتسجيل الدخول.");
-                            window.location.href = "index.html";
+                        // محاولة حفظ البروفايل
+                        if(data.user) {
+                             const { error: dbError } = await supabase.from('profiles').insert([
+                                { id: data.user.id, username: email.split('@')[0] }
+                            ]);
+                            if(dbError) log("DB Error: " + dbError.message);
+                            else log("Profile saved to DB.");
                         }
                     }
-                }
+                };
             } catch (err) {
-                msg.innerText = "❌ خطأ غير متوقع: " + err.message;
-                alert(err.message);
+                log("CRASH: " + err.message);
+                alert("حدث خطأ برمجي: " + err.message);
             }
         }
     </script>
 </body>
-    </html>
+</html>
