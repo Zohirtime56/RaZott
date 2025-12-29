@@ -15,13 +15,17 @@
         .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
         .stat-card { background: #333; padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
         .balance-text { font-size: 30px; color: #0f0; font-family: monospace; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-collect { background: #00C851; color: white; box-shadow: 0 4px #007E33; transition: 0.2s; }
+        .btn-collect:active { box-shadow: 0 2px #007E33; transform: translateY(2px); }
+        .btn-logout { background: #ff4444; color: white; margin-top: 30px; }
     </style>
 </head>
 <body>
 
     <div id="status-log" class="debug-box">
-        جاري فك تشفير الرابط والاتصال... 🔓
+        جاري تهيئة النظام... ⚙️
     </div>
 
     <div id="main-app" class="dashboard-box">
@@ -29,16 +33,18 @@
         <p>المستخدم: <span id="user-email" style="color: cyan;"></span></p>
 
         <div class="stat-card">
-            <small>💰 الرصيد</small>
+            <small>💰 الرصيد المحفوظ</small>
             <div id="balance" class="balance-text">---</div>
         </div>
 
         <div class="stat-card">
-            <small>أرباح جاري تعدينها</small>
+            <small>أرباح جاري تعدينها (غير محفوظة)</small>
             <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
 
-        <button onclick="logout()" style="background: #dc3545; color: white;">خروج</button>
+        <button onclick="collect()" class="btn-collect">جمع الأرباح وإضافتها للرصيد 📥</button>
+        
+        <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
     </div>
 
     <script>
@@ -49,58 +55,44 @@
             box.innerHTML = msg;
         }
 
-        // --- 1. البيانات المشفرة (لا تلمسها) ---
-        // هذا هو رابطك مشفراً لكي لا يدمره الهاتف
+        // --- 1. إعداد المفاتيح (عالمية) ---
         const ENCODED_URL = "aHR0cHM6Ly9vZXplaGRrZnVjd2h0dHNyb2Nzdi5zdXBhYmFzZS5jbw==";
-        
-        // مفتاحك مقسم (كما هو)
         const K1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         const K2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
         const K3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
 
+        // فك التشفير مرة واحدة لتستخدمها كل الدوال
+        const URL = atob(ENCODED_URL).trim();
+        const KEY = (K1 + K2 + K3).replace(/\s/g, '').trim();
+
+        let sb = null; // عميل Supabase
+        let currentUser = null;
+
         async function start() {
+            if (!window.supabase) {
+                log("⚠️ النت ضعيف، جاري تحميل المكتبة...", "orange");
+                setTimeout(() => window.location.reload(), 2000);
+                return;
+            }
+
             try {
-                // --- 2. فك التشفير والتنظيف ---
-                // atob: دالة تقوم بتحويل الكود المشفر إلى رابط حقيقي
-                const REAL_URL = atob(ENCODED_URL).trim(); 
-                
-                // تنظيف المفتاح من المسافات
-                const REAL_KEY = (K1 + K2 + K3).replace(/\s/g, '').trim();
+                sb = window.supabase.createClient(URL, KEY);
+                log("✅ تم الاتصال. جاري جلب البيانات...", "lime");
 
-                log(`تم فك التشفير بنجاح!<br>جاري الاتصال بـ Supabase...`, "lime");
-
-                if (!window.supabase) {
-                    log("⚠️ جاري تحميل المكتبة... (انتظر)", "orange");
-                    setTimeout(() => window.location.reload(), 2000);
-                    return;
-                }
-
-                // --- 3. الاتصال ---
-                const sb = window.supabase.createClient(REAL_URL, REAL_KEY);
+                const { data } = await sb.auth.getSession();
                 
-                const { data, error } = await sb.auth.getSession();
-                
-                if (error) throw error;
                 if (!data.session) {
                     window.location.href = "index.html"; 
                     return;
                 }
                 
-                const user = data.session.user;
-                document.getElementById('user-email').innerText = user.email;
+                currentUser = data.session.user;
+                document.getElementById('user-email').innerText = currentUser.email;
                 
-                // --- 4. جلب أو إنشاء الرصيد ---
-                const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                // جلب الرصيد
+                await updateBalanceDisplay();
                 
-                if(profile) {
-                    document.getElementById('balance').innerText = profile.balance.toFixed(4);
-                } else {
-                    // إذا لم يجد رصيد، ينشئه فوراً
-                    await sb.from('profiles').insert([{ id: user.id, username: user.email.split('@')[0], balance: 0 }]);
-                    document.getElementById('balance').innerText = "0.0000";
-                }
-                
-                // ✅ نجاح كامل
+                // فتح التطبيق
                 document.getElementById('status-log').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 
@@ -115,16 +107,62 @@
             }
         }
 
-        start();
+        // دالة تحديث الرصيد المعروض
+        async function updateBalanceDisplay() {
+            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+            if(profile) {
+                document.getElementById('balance').innerText = profile.balance.toFixed(4);
+            } else {
+                await sb.from('profiles').insert([{ id: currentUser.id, username: currentUser.email.split('@')[0], balance: 0 }]);
+                document.getElementById('balance').innerText = "0.0000";
+            }
+        }
+
+        // --- دالة الجمع (الأهم) ---
+        async function collect() {
+            const pendingEl = document.getElementById('pending');
+            const currentPending = parseFloat(pendingEl.innerText);
+
+            if (currentPending <= 0) {
+                alert("لا توجد أرباح لجمعها بعد! انتظر قليلاً.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-collect');
+            btn.innerText = "جاري الحفظ... ⏳";
+            btn.disabled = true; // منع الضغط مرتين
+
+            try {
+                // 1. جلب الرصيد الحالي من القاعدة للتأكد
+                const { data: profile } = await sb.from('profiles').select('balance').eq('id', currentUser.id).single();
+                
+                // 2. حساب الرصيد الجديد
+                const newBalance = profile.balance + currentPending;
+
+                // 3. تحديث القاعدة
+                const { error } = await sb.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                // 4. نجاح! تصفير العداد وتحديث الشاشة
+                alert(`✅ تم جمع ${currentPending.toFixed(5)} $ بنجاح!`);
+                pendingEl.innerText = "0.00000";
+                document.getElementById('balance').innerText = newBalance.toFixed(4);
+
+            } catch (err) {
+                alert("فشل الجمع: " + err.message);
+            } finally {
+                btn.innerText = "جمع الأرباح وإضافتها للرصيد 📥";
+                btn.disabled = false;
+            }
+        }
 
         async function logout() {
-            // تسجيل خروج آمن
-            const url = atob(ENCODED_URL).trim();
-            const key = (K1 + K2 + K3).replace(/\s/g, '').trim();
-            const sb = window.supabase.createClient(url, key);
             await sb.auth.signOut();
             window.location.href = "index.html";
         }
+
+        start();
     </script>
 </body>
 </html>
