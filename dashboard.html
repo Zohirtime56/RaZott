@@ -9,7 +9,7 @@
     <style>
         body { background-color: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .debug-box {
-            background: #111; border: 1px dashed cyan; color: cyan; 
+            background: #111; border: 1px dashed lime; color: lime; 
             padding: 15px; margin-bottom: 20px; text-align: left; direction: ltr; min-height: 50px; font-weight: bold;
         }
         .dashboard-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; background: #1a1a1a; display: none; }
@@ -25,7 +25,7 @@
 <body>
 
     <div id="status-log" class="debug-box">
-        جاري تهيئة النظام... ⚙️
+        جاري بناء الرابط رقمياً... 🔢
     </div>
 
     <div id="main-app" class="dashboard-box">
@@ -38,46 +38,51 @@
         </div>
 
         <div class="stat-card">
-            <small>أرباح جاري تعدينها (غير محفوظة)</small>
+            <small>أرباح جاري تعدينها</small>
             <div id="pending" style="font-size: 24px; color: #ffd700;">0.00000</div>
         </div>
 
-        <button onclick="collect()" class="btn-collect">جمع الأرباح وإضافتها للرصيد 📥</button>
+        <button onclick="collect()" class="btn-collect">جمع الأرباح للمحفظة 📥</button>
         
         <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
     </div>
 
     <script>
-        function log(msg, color="cyan") {
+        function log(msg, color="lime") {
             const box = document.getElementById('status-log');
             box.style.color = color;
             box.style.borderColor = color;
             box.innerHTML = msg;
         }
 
-        // --- 1. إعداد المفاتيح (عالمية) ---
-        const ENCODED_URL = "aHR0cHM6Ly9vZXplaGRrZnVjd2h0dHNyb2Nzdi5zdXBhYmFzZS5jbw==";
-        const K1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        const K2 = ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30";
-        const K3 = ".WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        // --- الحل الرقمي (ASCII Codes) ---
+        // هذه الأرقام تمثل رابط موقعك حرفاً بحرف. مستحيل أن تخطئ.
+        const _urlCodes = [104,116,116,112,115,58,47,47,111,101,122,101,104,100,107,102,117,99,119,104,116,116,115,114,111,99,115,118,46,115,117,112,97,98,97,115,101,46,99,111];
+        
+        // بناء الرابط من الأرقام
+        const URL = String.fromCharCode(..._urlCodes);
 
-        // فك التشفير مرة واحدة لتستخدمها كل الدوال
-        const URL = atob(ENCODED_URL).trim();
-        const KEY = (K1 + K2 + K3).replace(/\s/g, '').trim();
+        // المفتاح (كما هو، لكن سننظفه احتياطاً)
+        const rawKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lemVoZGtmdWN3aHR0c3JvY3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzg4OTMsImV4cCI6MjA4MjUxNDg5M30.WB567kJLDTTWJMpkw8QLq3Y1DL0serVz6-v95TJubKo";
+        // دالة تنظيف قوية تحذف أي شيء ليس حرفاً أو رقماً أو رمزاً مسموحاً
+        const KEY = rawKey.replace(/[^a-zA-Z0-9._-]/g, "");
 
-        let sb = null; // عميل Supabase
+        let sb = null;
         let currentUser = null;
 
         async function start() {
+            log(`الرابط تم بناؤه بنجاح:<br>${URL}`, "cyan");
+
             if (!window.supabase) {
-                log("⚠️ النت ضعيف، جاري تحميل المكتبة...", "orange");
+                log("⚠️ النت بطيء، جاري تحميل المكتبة...", "orange");
                 setTimeout(() => window.location.reload(), 2000);
                 return;
             }
 
             try {
+                // الاتصال
                 sb = window.supabase.createClient(URL, KEY);
-                log("✅ تم الاتصال. جاري جلب البيانات...", "lime");
+                log("✅ تم الاتصال. جاري الدخول...", "lime");
 
                 const { data } = await sb.auth.getSession();
                 
@@ -92,7 +97,7 @@
                 // جلب الرصيد
                 await updateBalanceDisplay();
                 
-                // فتح التطبيق
+                // إخفاء اللوج وفتح التطبيق
                 document.getElementById('status-log').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 
@@ -103,11 +108,10 @@
                 }, 1000);
 
             } catch (err) {
-                log(`🔥 خطأ: ${err.message}`, "red");
+                log(`🔥 خطأ قاتل: ${err.message}`, "red");
             }
         }
 
-        // دالة تحديث الرصيد المعروض
         async function updateBalanceDisplay() {
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if(profile) {
@@ -118,41 +122,35 @@
             }
         }
 
-        // --- دالة الجمع (الأهم) ---
         async function collect() {
             const pendingEl = document.getElementById('pending');
             const currentPending = parseFloat(pendingEl.innerText);
 
             if (currentPending <= 0) {
-                alert("لا توجد أرباح لجمعها بعد! انتظر قليلاً.");
+                alert("انتظر حتى تجمع بعض الأرباح!");
                 return;
             }
 
             const btn = document.querySelector('.btn-collect');
             btn.innerText = "جاري الحفظ... ⏳";
-            btn.disabled = true; // منع الضغط مرتين
+            btn.disabled = true;
 
             try {
-                // 1. جلب الرصيد الحالي من القاعدة للتأكد
                 const { data: profile } = await sb.from('profiles').select('balance').eq('id', currentUser.id).single();
-                
-                // 2. حساب الرصيد الجديد
                 const newBalance = profile.balance + currentPending;
-
-                // 3. تحديث القاعدة
+                
                 const { error } = await sb.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
 
                 if (error) throw error;
 
-                // 4. نجاح! تصفير العداد وتحديث الشاشة
-                alert(`✅ تم جمع ${currentPending.toFixed(5)} $ بنجاح!`);
+                alert(`✅ تم حفظ ${currentPending.toFixed(5)} $ في الخزنة!`);
                 pendingEl.innerText = "0.00000";
                 document.getElementById('balance').innerText = newBalance.toFixed(4);
 
             } catch (err) {
                 alert("فشل الجمع: " + err.message);
             } finally {
-                btn.innerText = "جمع الأرباح وإضافتها للرصيد 📥";
+                btn.innerText = "جمع الأرباح للمحفظة 📥";
                 btn.disabled = false;
             }
         }
