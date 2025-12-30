@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سحب الأرباح</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto; background: #1a1a1a; }
+        input, select { width: 95%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #555; background: #333; color: white; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
+        .info-text { font-size: 14px; color: #ccc; margin-top: 5px; }
+        .fee-display { color: #ff4444; font-size: 14px; }
+        .final-display { color: #00C851; font-weight: bold; font-size: 18px; }
+        .balance-box { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ffd700; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2 style="color: #ffd700;">💸 سحب الأرباح</h2>
+        
+        <div class="balance-box">
+            رصيدك الحالي:<br>
+            <span id="current-balance" style="color: #0f0; font-size: 24px;">---</span> $<br>
+            <small style="color: gray;">(يساوي <span id="points-balance">0</span> نقطة)</small>
+        </div>
+
+        <label>اختر وسيلة السحب:</label>
+        <select id="method" onchange="calcFee()">
+            <option value="TRON">Tron (TRX) - حد أدنى 1$ (رسوم 3%)</option>
+            <option value="USDT">USDT (Trc20) - حد أدنى 5$ (رسوم 5%)</option>
+        </select>
+
+        <input type="text" id="wallet" placeholder="عنوان المحفظة (Wallet Address)">
+        
+        <input type="number" id="amount" placeholder="المبلغ المراد سحبه ($)" oninput="calcFee()">
+
+        <div style="text-align: right; margin: 10px;">
+            <p class="fee-display">الرسوم: <span id="fee-val">0.00</span> $</p>
+            <p class="final-display">ستستلم: <span id="final-val">0.00</span> $</p>
+        </div>
+
+        <button id="withdrawBtn" onclick="requestWithdraw()" class="btn" style="background: #ffd700; color: black;">تأكيد السحب ✔️</button>
+        <button onclick="window.location.href='../dashboard.html'" class="btn" style="background: #555; color: white;">عودة للمنجم 🔙</button>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="script.js"></script>
+
+</body>
+                           </html>
