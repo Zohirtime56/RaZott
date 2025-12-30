@@ -1,11 +1,12 @@
 // ملف: earn/script.js
 
-let currentUser = null;
+// 1. رابط الجدار الخاص بك (الذي أرسلته لي)
+const MY_OFFERWALL_LINK = "https://www.akamaicdn.org/list/28rfqX";
 
-async function initEarnPage() {
+async function initOfferwall() {
     // التأكد من الاتصال
     if (!window.sb) {
-        setTimeout(initEarnPage, 500);
+        setTimeout(initOfferwall, 500);
         return;
     }
 
@@ -15,64 +16,24 @@ async function initEarnPage() {
         return;
     }
     
-    currentUser = data.session.user;
-    updateBalanceDisplay();
-}
+    const user = data.session.user;
+    document.getElementById('username-display').innerText = user.email;
 
-// دالة تحديث الرصيد المعروض
-async function updateBalanceDisplay() {
-    const { data: profile } = await window.sb.from('profiles').select('balance').eq('id', currentUser.id).single();
-    if (profile) {
-        document.getElementById('current-balance').innerText = profile.balance.toFixed(4);
-    }
-}
+    // 2. تجهيز الرابط الذكي
+    // نضيف معرف المستخدم (ID) إلى الرابط لكي تعرف الشركة من نفذ العرض
+    // CPALead تستخدم "subid" لاستلام معرف المستخدم
+    const finalUrl = `${MY_OFFERWALL_LINK}?subid=${user.id}`;
 
-// --- منطق مشاهدة الإعلان ---
-function startAd(companyName, rewardAmount) {
-    const overlay = document.getElementById('ad-overlay');
-    const timerEl = document.getElementById('timer');
+    // 3. تشغيل الجدار
+    const iframe = document.getElementById('offerwall-frame');
+    iframe.src = finalUrl;
     
-    overlay.style.display = 'flex'; // إظهار الشاشة
-    let timeLeft = 5; // مدة الإعلان (5 ثواني)
-    timerEl.innerText = timeLeft;
-
-    const interval = setInterval(() => {
-        timeLeft--;
-        timerEl.innerText = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(interval);
-            completeAd(rewardAmount);
-        }
-    }, 1000);
+    // عند الانتهاء من التحميل، نُظهر الإطار ونخفي رسالة الانتظار
+    iframe.onload = function() {
+        document.getElementById('loading').style.display = 'none';
+        iframe.style.display = 'block';
+    };
 }
 
-// دالة إضافة المكافأة عند انتهاء الوقت
-async function completeAd(amount) {
-    document.getElementById('timer').innerText = "✔";
-    
-    try {
-        // 1. جلب الرصيد القديم
-        const { data: profile } = await window.sb.from('profiles').select('balance').eq('id', currentUser.id).single();
-        
-        // 2. حساب الرصيد الجديد
-        const newBalance = profile.balance + amount;
-        
-        // 3. التحديث في قاعدة البيانات
-        await window.sb.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-        
-        // 4. إغلاق الإعلان وتحديث الشاشة
-        setTimeout(() => {
-            document.getElementById('ad-overlay').style.display = 'none';
-            updateBalanceDisplay();
-            alert(`✅ مبروك! تم إضافة ${amount} $ لرصيدك.`);
-        }, 500);
-
-    } catch (err) {
-        alert("حدث خطأ في الشبكة: " + err.message);
-        document.getElementById('ad-overlay').style.display = 'none';
-    }
-}
-
-// تشغيل الصفحة
-initEarnPage();
+// تشغيل
+initOfferwall();
