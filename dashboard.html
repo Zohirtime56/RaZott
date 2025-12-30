@@ -9,9 +9,16 @@
     <style>
         body { background: #000; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto; background: #1a1a1a; }
-        .btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
         .gold { color: #ffd700; }
         .green { color: #0f0; font-size: 25px; font-family: monospace; }
+        
+        /* ألوان الأزرار */
+        .btn-collect { background: #00C851; color: white; } /* أخضر */
+        .btn-ads { background: #9c27b0; color: white; } /* بنفسجي */
+        .btn-withdraw { background: #007bff; color: white; } /* أزرق */
+        .btn-logout { background: #ff4444; color: white; margin-top: 20px; } /* أحمر */
     </style>
 </head>
 <body>
@@ -30,11 +37,13 @@
         <p>⚡ جاري التعدين:</p>
         <div id="pending" class="gold" style="font-size: 20px;">0.00000</div>
         
-        <button id="collectBtn" onclick="collectProfits()" class="btn" style="background: #00C851; color: white;">جمع الأرباح 📥</button>
+        <button id="collectBtn" onclick="collectProfits()" class="btn btn-collect">جمع الأرباح 📥</button>
 
-        <button onclick="window.location.href='withdraw/index.html'" class="btn" style="background: #007bff; color: white; margin-top: 10px;">طلب سحب الأموال 💸</button>
+        <button onclick="window.location.href='earn/index.html'" class="btn btn-ads">📺 شاهد واربح (إعلانات)</button>
 
-        <button onclick="logoutUser()" class="btn" style="background: #ff4444; color: white;">خروج</button>
+        <button onclick="window.location.href='withdraw/index.html'" class="btn btn-withdraw">طلب سحب الأموال 💸</button>
+
+        <button onclick="logoutUser()" class="btn btn-logout">تسجيل خروج</button>
     </div>
 
     <script src="js/config.js"></script>
